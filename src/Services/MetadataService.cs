@@ -6,7 +6,7 @@ using MetadataExtractor.Formats.QuickTime;
 using MetadataExtractor.Formats.Xmp;
 using MetadataExtractor.Util;
 
-namespace PersonalMediaArchiver.Services;
+namespace EdsMediaArchiver.Services;
 
 /// <summary>
 /// Reads and writes media metadata using MetadataExtractor (reading),

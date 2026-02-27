@@ -1,6 +1,6 @@
-using PersonalMediaArchiver.Models;
+using EdsMediaArchiver.Models;
 
-namespace PersonalMediaArchiver.Services;
+namespace EdsMediaArchiver.Services;
 
 /// <summary>
 /// Processes a single media file: detects type, fixes extension, resolves best date,

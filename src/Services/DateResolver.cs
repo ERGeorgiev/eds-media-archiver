@@ -1,6 +1,6 @@
 using System.Text.RegularExpressions;
 
-namespace PersonalMediaArchiver.Services;
+namespace EdsMediaArchiver.Services;
 
 /// <summary>
 /// Determines the best date for a media file using the priority:

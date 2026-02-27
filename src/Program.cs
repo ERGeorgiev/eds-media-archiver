@@ -1,6 +1,6 @@
-using PersonalMediaArchiver;
-using PersonalMediaArchiver.Models;
-using PersonalMediaArchiver.Services;
+using EdsMediaArchiver;
+using EdsMediaArchiver.Models;
+using EdsMediaArchiver.Services;
 using System.Reflection;
 
 Console.WriteLine();

@@ -1,6 +1,6 @@
 using System.Text.RegularExpressions;
 
-namespace PersonalMediaArchiver;
+namespace EdsMediaArchiver;
 
 /// <summary>
 /// File type classifications, extension mappings, and filename date patterns
