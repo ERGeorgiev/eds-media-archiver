@@ -11,13 +11,11 @@ public class MediaFileProcessor
     private readonly ExifToolService _exifTool;
     private readonly ImageMagickService _magick;
     private readonly DateResolver _dateResolver;
-    private readonly bool _hasMagick;
 
-    public MediaFileProcessor(ExifToolService exifTool, ImageMagickService magick, bool hasMagick)
+    public MediaFileProcessor(ExifToolService exifTool, ImageMagickService magick)
     {
         _exifTool = exifTool;
         _magick = magick;
-        _hasMagick = hasMagick;
         _dateResolver = new DateResolver(exifTool);
     }
 
@@ -41,8 +39,8 @@ public class MediaFileProcessor
                 return new ProcessingResult(relativePath, null, ProcessingStatus.Skipped, "No valid dates found");
             }
 
-            // XMP-only formats: convert to JPG if ImageMagick is available
-            if (Constants.XmpOnlyTypes.Contains(actualType) && _hasMagick)
+            // XMP-only formats: convert to JPG via Magick.NET
+            if (Constants.XmpOnlyTypes.Contains(actualType))
             {
                 return await ConvertAndWriteDateAsync(filePath, bestDate.Value, rootPath, relativePath);
             }
@@ -96,7 +94,7 @@ public class MediaFileProcessor
         var success = await _magick.ConvertToJpgAsync(filePath, jpgPath);
         if (!success)
         {
-            Console.WriteLine($"  [ERR] {relativePath} - ImageMagick conversion failed, falling back to XMP");
+            Console.WriteLine($"  [ERR] {relativePath} - Magick.NET conversion failed, falling back to XMP");
             await _exifTool.WriteXmpDatesAsync(filePath, bestDate);
             SetFilesystemDates(filePath, bestDate);
             return new ProcessingResult(relativePath, bestDate, ProcessingStatus.Fixed);
@@ -130,7 +128,7 @@ public class MediaFileProcessor
         }
         else
         {
-            // XMP-only without ImageMagick, or unknown type — XMP as best effort
+            // Unknown type — XMP as best effort
             await _exifTool.WriteXmpDatesAsync(filePath, date);
         }
     }

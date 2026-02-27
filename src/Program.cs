@@ -25,20 +25,10 @@ if (!ExifToolService.IsAvailable())
     return 1;
 }
 
-var hasMagick = ImageMagickService.IsAvailable();
-
 Console.WriteLine("  This tool will:");
 Console.WriteLine("    - Detect actual file types and fix wrong extensions");
 Console.WriteLine("    - Convert XMP-only images (WebP, BMP, GIF, TIFF) to JPG for EXIF support");
 Console.WriteLine("    - Write date metadata and set filesystem dates");
-
-if (!hasMagick)
-{
-    Console.WriteLine();
-    Console.WriteLine("  [WARN] ImageMagick not found. XMP-only formats cannot be converted to JPG.");
-    Console.WriteLine("  Install via: winget install ImageMagick.ImageMagick");
-    Console.WriteLine("  Those files will receive XMP dates only (may not sort correctly in galleries).");
-}
 
 Console.WriteLine();
 Console.Write("  Proceed? (Y/n) ");
@@ -52,7 +42,7 @@ if (confirm?.TrimStart().StartsWith("n", StringComparison.OrdinalIgnoreCase) == 
 // Initialize services
 var exifTool = new ExifToolService();
 var magick = new ImageMagickService();
-var processor = new MediaFileProcessor(exifTool, magick, hasMagick);
+var processor = new MediaFileProcessor(exifTool, magick);
 
 // Process each folder
 foreach (var inputPath in args)
