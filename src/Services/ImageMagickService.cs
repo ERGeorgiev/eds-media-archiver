@@ -1,6 +1,6 @@
 using ImageMagick;
 
-namespace PersonalMediaArchiver.Services;
+namespace EdsMediaArchiver.Services;
 
 /// <summary>
 /// Uses Magick.NET for image conversion and file type detection.

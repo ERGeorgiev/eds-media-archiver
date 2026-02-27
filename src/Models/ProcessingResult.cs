@@ -1,4 +1,4 @@
-namespace PersonalMediaArchiver.Models;
+namespace EdsMediaArchiver.Models;
 
 public enum ProcessingStatus
 {
