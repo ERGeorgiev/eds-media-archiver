@@ -31,7 +31,7 @@ public static class Constants
         "WEBP", "BMP", "GIF", "TIFF"
     };
 
-    /// <summary>Map from ExifTool FileType to correct extension (for fixing mislabeled files).</summary>
+    /// <summary>Map from detected file type to correct extension (for fixing mislabeled files).</summary>
     public static readonly Dictionary<string, string> TypeToExtension = new(StringComparer.OrdinalIgnoreCase)
     {
         ["JPEG"] = ".jpg",  ["PNG"]  = ".png",  ["HEIC"] = ".heic", ["HEIF"] = ".heif",

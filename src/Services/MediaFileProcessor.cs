@@ -8,15 +8,15 @@ namespace PersonalMediaArchiver.Services;
 /// </summary>
 public class MediaFileProcessor
 {
-    private readonly ExifToolService _exifTool;
+    private readonly MetadataService _metadata;
     private readonly ImageMagickService _magick;
     private readonly DateResolver _dateResolver;
 
-    public MediaFileProcessor(ExifToolService exifTool, ImageMagickService magick)
+    public MediaFileProcessor(MetadataService metadata, ImageMagickService magick)
     {
-        _exifTool = exifTool;
+        _metadata = metadata;
         _magick = magick;
-        _dateResolver = new DateResolver(exifTool);
+        _dateResolver = new DateResolver(metadata);
     }
 
     public async Task<ProcessingResult> ProcessFileAsync(string filePath, string rootPath)
@@ -25,14 +25,14 @@ public class MediaFileProcessor
 
         try
         {
-            // Detect actual file type via ExifTool (not just the extension)
-            var actualType = await _exifTool.GetFileTypeAsync(filePath);
+            // Detect actual file type via magic bytes (not just the extension)
+            var actualType = _metadata.DetectFileType(filePath);
 
             // Fix mislabeled extension if needed
             filePath = FixExtension(filePath, actualType, rootPath, ref relativePath);
 
             // Determine the best available date
-            var bestDate = await _dateResolver.ResolveBestDateAsync(filePath);
+            var bestDate = _dateResolver.ResolveBestDate(filePath);
             if (!bestDate.HasValue)
             {
                 Console.WriteLine($"  [SKIP] {relativePath} - no valid dates found");
@@ -95,13 +95,13 @@ public class MediaFileProcessor
         if (!success)
         {
             Console.WriteLine($"  [ERR] {relativePath} - Magick.NET conversion failed, falling back to XMP");
-            await _exifTool.WriteXmpDatesAsync(filePath, bestDate);
+            await _metadata.WriteXmpDatesAsync(filePath, bestDate);
             SetFilesystemDates(filePath, bestDate);
             return new ProcessingResult(relativePath, bestDate, ProcessingStatus.Fixed);
         }
 
         // Write EXIF dates into the new JPG
-        await _exifTool.WriteExifDatesAsync(jpgPath, bestDate);
+        await _metadata.WriteExifDatesAsync(jpgPath, bestDate);
         SetFilesystemDates(jpgPath, bestDate);
 
         // Delete original (conversion succeeded)
@@ -116,20 +116,20 @@ public class MediaFileProcessor
     {
         if (Constants.ExifWritableTypes.Contains(actualType))
         {
-            await _exifTool.WriteExifDatesAsync(filePath, date);
+            await _metadata.WriteExifDatesAsync(filePath, date);
         }
         else if (Constants.VideoTypes.Contains(actualType))
         {
-            await _exifTool.WriteVideoDatesAsync(filePath, date);
+            _metadata.WriteVideoDates(filePath, date);
         }
         else if (actualType.Equals("PNG", StringComparison.OrdinalIgnoreCase))
         {
-            await _exifTool.WritePngDatesAsync(filePath, date);
+            await _metadata.WritePngDatesAsync(filePath, date);
         }
         else
         {
             // Unknown type — XMP as best effort
-            await _exifTool.WriteXmpDatesAsync(filePath, date);
+            await _metadata.WriteXmpDatesAsync(filePath, date);
         }
     }
 

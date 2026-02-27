@@ -17,14 +17,6 @@ if (args.Length == 0)
     return 1;
 }
 
-// Check dependencies
-if (!ExifToolService.IsAvailable())
-{
-    Console.Error.WriteLine("[ERROR] ExifTool is required but not found.");
-    Console.Error.WriteLine("  Install via: winget install OliverBetz.ExifTool  OR  choco install exiftool");
-    return 1;
-}
-
 Console.WriteLine("  This tool will:");
 Console.WriteLine("    - Detect actual file types and fix wrong extensions");
 Console.WriteLine("    - Convert XMP-only images (WebP, BMP, GIF, TIFF) to JPG for EXIF support");
@@ -40,9 +32,9 @@ if (confirm?.TrimStart().StartsWith("n", StringComparison.OrdinalIgnoreCase) == 
 }
 
 // Initialize services
-var exifTool = new ExifToolService();
+var metadata = new MetadataService();
 var magick = new ImageMagickService();
-var processor = new MediaFileProcessor(exifTool, magick);
+var processor = new MediaFileProcessor(metadata, magick);
 
 // Process each folder
 foreach (var inputPath in args)
