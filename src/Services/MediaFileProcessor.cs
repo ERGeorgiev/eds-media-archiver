@@ -29,7 +29,7 @@ public class MediaFileProcessor(ImageMagickService magick, MetadataService metad
             }
 
             // XMP-only formats: convert to JPG via Magick.NET
-            if (Constants.XmpOnlyTypes.Contains(actualType))
+            if (MediaType.XmpOnlyTypes.Contains(actualType))
             {
                 return await ConvertAndWriteDateAsync(filePath, bestDate.Value, rootPath, relativePath);
             }
@@ -51,7 +51,7 @@ public class MediaFileProcessor(ImageMagickService magick, MetadataService metad
     }
 
     private async Task<ProcessingResult> ConvertAndWriteDateAsync(
-        string filePath, DateTime bestDate, string rootPath, string relativePath)
+        string filePath, DateTimeOffset bestDate, string rootPath, string relativePath)
     {
         var jpgPath = Path.ChangeExtension(filePath, ".jpg");
         if (File.Exists(jpgPath) && !string.Equals(jpgPath, filePath, StringComparison.OrdinalIgnoreCase))
@@ -80,7 +80,7 @@ public class MediaFileProcessor(ImageMagickService magick, MetadataService metad
 
     private static string FixExtension(string filePath, string actualType, string rootPath, ref string relativePath)
     {
-        if (!Constants.TypeToExtension.TryGetValue(actualType, out var correctExt))
+        if (!Constants.FileTypeToExtension.TryGetValue(actualType, out var correctExt))
             return filePath;
 
         var currentExt = Path.GetExtension(filePath);
@@ -101,13 +101,13 @@ public class MediaFileProcessor(ImageMagickService magick, MetadataService metad
         return newPath;
     }
 
-    private async Task WriteDateForTypeAsync(string filePath, string actualType, DateTime date)
+    private async Task WriteDateForTypeAsync(string filePath, string actualType, DateTimeOffset date)
     {
-        if (Constants.ExifWritableTypes.Contains(actualType))
+        if (MediaType.ExifWritableTypes.Contains(actualType))
         {
             await metadataService.WriteExifDatesAsync(filePath, date);
         }
-        else if (Constants.VideoTypes.Contains(actualType))
+        else if (MediaType.VideoTypes.Contains(actualType))
         {
             metadataService.WriteVideoDates(filePath, date);
         }
@@ -122,10 +122,10 @@ public class MediaFileProcessor(ImageMagickService magick, MetadataService metad
         }
     }
 
-    private static void SetFilesystemDates(string filePath, DateTime date)
+    private static void SetFilesystemDates(string filePath, DateTimeOffset date)
     {
-        File.SetCreationTime(filePath, date);
-        File.SetLastWriteTime(filePath, date);
+        File.SetCreationTime(filePath, date.LocalDateTime);
+        File.SetLastWriteTime(filePath, date.LocalDateTime);
     }
 
     private static string NormalizeExtension(string ext)

@@ -2,6 +2,8 @@ using System.Text.RegularExpressions;
 
 namespace EdsMediaArchiver.Services;
 
+// ToDo: Read mmetadata OffsetTime to get "+05:00" or something like that and take it into consideration
+
 /// <summary>
 /// Determines the best date for a media file using the priority:
 ///   1. DateTimeOriginal (EXIF) — wins unconditionally
@@ -17,7 +19,7 @@ public partial class DateResolver(MetadataService metadataService)
     [GeneratedRegex(@"(?<!\d)(\d{10})(?!\d)", RegexOptions.Compiled)]
     private static partial Regex TimestampSecondsPattern();
 
-    public DateTime? ResolveBestDate(string filePath)
+    public DateTimeOffset? ResolveBestDate(string filePath)
     {
         // 1. DateTimeOriginal wins unconditionally
         var dto = metadataService.GetDateTimeOriginal(filePath);
@@ -69,7 +71,7 @@ public partial class DateResolver(MetadataService metadataService)
     /// <summary>
     /// Extracts a date from a Unix epoch timestamp embedded in the filename.
     /// Supports 13-digit millisecond timestamps and 10-digit second timestamps.
-    /// Only considers timestamps that resolve to dates from year 2000 onward.
+    /// Only considers timestamps that resolve to dates from year 1700 onward.
     /// </summary>
     public DateTime? ExtractTimestampFromFilename(string fileName)
     {
@@ -78,7 +80,7 @@ public partial class DateResolver(MetadataService metadataService)
         if (match.Success && long.TryParse(match.Groups[1].Value, out var ms))
         {
             var dt = DateTimeOffset.FromUnixTimeMilliseconds(ms).LocalDateTime;
-            if (dt.Year >= 2000 && dt <= DateTime.Now.AddDays(1))
+            if (dt.Year >= 1700 && dt <= DateTime.Now.AddDays(1))
                 return dt;
         }
 
@@ -87,16 +89,16 @@ public partial class DateResolver(MetadataService metadataService)
         if (match.Success && long.TryParse(match.Groups[1].Value, out var sec))
         {
             var dt = DateTimeOffset.FromUnixTimeSeconds(sec).LocalDateTime;
-            if (dt.Year >= 2000 && dt <= DateTime.Now.AddDays(1))
+            if (dt.Year >= 1700 && dt <= DateTime.Now.AddDays(1))
                 return dt;
         }
 
         return null;
     }
 
-    private DateTime? GetOldestCandidateDate(string filePath)
+    private DateTimeOffset? GetOldestCandidateDate(string filePath)
     {
-        var candidates = new List<DateTime>();
+        var candidates = new List<DateTimeOffset>();
 
         // Other trusted EXIF/XMP tags
         var metadataDates = metadataService.GetOtherTrustedDates(filePath);
@@ -104,7 +106,7 @@ public partial class DateResolver(MetadataService metadataService)
 
         // Filesystem dates
         var fileInfo = new FileInfo(filePath);
-        if (fileInfo.Exists)
+        if (fileInfo.Exists) // ToDo: This might fail
         {
             AddIfValid(candidates, fileInfo.CreationTime);
             AddIfValid(candidates, fileInfo.LastWriteTime);
@@ -113,9 +115,9 @@ public partial class DateResolver(MetadataService metadataService)
         return candidates.Count > 0 ? candidates.Min() : null;
     }
 
-    private static void AddIfValid(List<DateTime> candidates, DateTime dt)
+    private static void AddIfValid(List<DateTimeOffset> candidates, DateTime dt)
     {
-        if (dt <= DateTime.Now.AddDays(1))
+        if (dt <= DateTimeOffset.Now.AddDays(1))
             candidates.Add(dt);
     }
 }

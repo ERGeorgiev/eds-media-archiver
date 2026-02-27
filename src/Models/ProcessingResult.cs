@@ -10,6 +10,6 @@ public enum ProcessingStatus
 
 public record ProcessingResult(
     string RelativePath,
-    DateTime? DateAssigned,
+    DateTimeOffset? DateAssigned,
     ProcessingStatus Status,
     string? ErrorMessage = null);

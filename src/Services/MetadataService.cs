@@ -44,7 +44,7 @@ public class MetadataService
     }
 
     /// <summary>Reads the EXIF DateTimeOriginal tag (highest priority date source).</summary>
-    public DateTime? GetDateTimeOriginal(string filePath)
+    public DateTimeOffset? GetDateTimeOriginal(string filePath)
     {
         try
         {
@@ -72,9 +72,9 @@ public class MetadataService
     /// Reads other trusted date tags: EXIF CreateDate/ModifyDate,
     /// QuickTime movie/track dates, and XMP dates.
     /// </summary>
-    public List<DateTime> GetOtherTrustedDates(string filePath)
+    public List<DateTimeOffset> GetOtherTrustedDates(string filePath)
     {
-        var dates = new List<DateTime>();
+        var dates = new List<DateTimeOffset>();
         try
         {
             var directories = ImageMetadataReader.ReadMetadata(filePath);
@@ -114,7 +114,7 @@ public class MetadataService
 
     // ── Writing (images via Magick.NET) ──────────────────────────────────
 
-    public async Task WriteExifDatesAsync(string filePath, DateTime date)
+    public async Task WriteExifDatesAsync(string filePath, DateTimeOffset date)
     {
         using var image = new MagickImage();
         await image.ReadAsync(filePath);
@@ -130,7 +130,7 @@ public class MetadataService
         await image.WriteAsync(filePath);
     }
 
-    public async Task WritePngDatesAsync(string filePath, DateTime date)
+    public async Task WritePngDatesAsync(string filePath, DateTimeOffset date)
     {
         using var image = new MagickImage();
         await image.ReadAsync(filePath);
@@ -145,7 +145,7 @@ public class MetadataService
         await image.WriteAsync(filePath);
     }
 
-    public async Task WriteXmpDatesAsync(string filePath, DateTime date)
+    public async Task WriteXmpDatesAsync(string filePath, DateTimeOffset date)
     {
         using var image = new MagickImage();
         await image.ReadAsync(filePath);
@@ -171,17 +171,17 @@ public class MetadataService
 
     // ── Writing (video via TagLibSharp) ──────────────────────────────────
 
-    public void WriteVideoDates(string filePath, DateTime date)
+    public void WriteVideoDates(string filePath, DateTimeOffset date)
     {
         using var file = TagLib.File.Create(filePath);
-        file.Tag.DateTagged = date;
-        file.Tag.Year = (uint)date.Year;
+        file.Tag.DateTagged = date.LocalDateTime;
+        file.Tag.Year = (uint)date.LocalDateTime.Year;
         file.Save();
     }
 
     // ── Helpers ──────────────────────────────────────────────────────────
 
-    private static void TryAddDate(List<DateTime> dates, MetadataExtractor.Directory dir, int tag)
+    private static void TryAddDate(List<DateTimeOffset> dates, MetadataExtractor.Directory dir, int tag)
     {
         if (dir.TryGetDateTime(tag, out var dt))
         {
@@ -191,7 +191,7 @@ public class MetadataService
         }
     }
 
-    private static DateTime? GetXmpDate(XmpDirectory xmpDir, string ns, string property)
+    private static DateTimeOffset? GetXmpDate(XmpDirectory xmpDir, string ns, string property)
     {
         try
         {
@@ -206,7 +206,7 @@ public class MetadataService
         return null;
     }
 
-    private static void AddXmpDate(List<DateTime> dates, XmpDirectory xmpDir, string ns, string property)
+    private static void AddXmpDate(List<DateTimeOffset> dates, XmpDirectory xmpDir, string ns, string property)
     {
         var date = GetXmpDate(xmpDir, ns, property);
         if (date.HasValue) dates.Add(date.Value);
@@ -221,16 +221,16 @@ public class MetadataService
     {
         return fileType switch
         {
-            FileType.Jpeg => "JPEG",
-            FileType.Png => "PNG",
-            FileType.Gif => "GIF",
-            FileType.Bmp => "BMP",
-            FileType.Tiff => "TIFF",
-            FileType.WebP => "WEBP",
-            FileType.Heif => "HEIF",
-            FileType.QuickTime => "QuickTime",
-            FileType.Mp4 => "MP4",
-            FileType.Avi => "AVI",
+            FileType.Jpeg => MediaType.Jpeg,
+            FileType.Png => MediaType.Png,
+            FileType.Gif => MediaType.Gif,
+            FileType.Bmp => MediaType.Bmp,
+            FileType.Tiff => MediaType.Tiff,
+            FileType.WebP => MediaType.Webp,
+            FileType.Heif => MediaType.Heif,
+            FileType.QuickTime => MediaType.QuickTime,
+            FileType.Mp4 => MediaType.Mp4,
+            FileType.Avi => MediaType.Avi,
             _ => fileType.ToString().ToUpperInvariant()
         };
     }
@@ -238,25 +238,6 @@ public class MetadataService
     private static string InferTypeFromExtension(string filePath)
     {
         var ext = Path.GetExtension(filePath);
-        if (string.IsNullOrEmpty(ext)) return "UNKNOWN";
-
-        return ext.ToLowerInvariant() switch
-        {
-            ".jpg" or ".jpeg" => "JPEG",
-            ".png" => "PNG",
-            ".gif" => "GIF",
-            ".bmp" => "BMP",
-            ".tiff" or ".tif" => "TIFF",
-            ".webp" => "WEBP",
-            ".heic" => "HEIC",
-            ".heif" => "HEIF",
-            ".mp4" => "MP4",
-            ".mov" => "QuickTime",
-            ".avi" => "AVI",
-            ".mkv" => "MKV",
-            ".wmv" => "WMV",
-            ".3gp" => "3GP",
-            _ => "UNKNOWN"
-        };
+        return Constants.ExtensionToFileType.TryGetValue(ext, out var fileType) ? fileType : MediaType.Unknown;
     }
 }
