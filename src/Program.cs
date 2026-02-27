@@ -2,7 +2,6 @@ using PersonalMediaArchiver;
 using PersonalMediaArchiver.Models;
 using PersonalMediaArchiver.Services;
 using System.Reflection;
-using System.Reflection.Metadata;
 
 Console.WriteLine();
 Console.WriteLine("================================================");
