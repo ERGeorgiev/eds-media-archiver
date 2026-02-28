@@ -1,5 +1,6 @@
 using EdsMediaArchiver.Models;
 using EdsMediaArchiver.Services.Compressors;
+using EdsMediaArchiver.Services.Converters;
 
 namespace EdsMediaArchiver.Services.Processors;
 
@@ -12,7 +13,7 @@ public interface IConvertProcessor
     Task<ProcessingResult?> ProcessAsync(ArchiveRequest request);
 }
 
-public class ConvertProcessor(IEnumerable<IMediaCompressor> compressors) : IConvertProcessor
+public class ConvertProcessor(IEnumerable<IMediaConverter> converters) : IConvertProcessor
 {
     public async Task<ProcessingResult?> ProcessAsync(ArchiveRequest request)
     {
@@ -21,10 +22,10 @@ public class ConvertProcessor(IEnumerable<IMediaCompressor> compressors) : IConv
             var actualType = request.ActualFileType;
             if (request.Compress)
             {
-                var compressor = compressors.FirstOrDefault(c => c.IsSupported(actualType));
-                if (compressor != null)
+                var converter = converters.FirstOrDefault(c => c.IsSupported(actualType));
+                if (converter != null)
                 {
-                    return await ConvertFileAsync(request, compressor);
+                    return await ConvertFileAsync(request, converter);
                 }
             }
         }
@@ -36,14 +37,14 @@ public class ConvertProcessor(IEnumerable<IMediaCompressor> compressors) : IConv
         return null;
     }
 
-    private static async Task<ProcessingResult> ConvertFileAsync(ArchiveRequest request, IMediaCompressor compressor)
+    private static async Task<ProcessingResult> ConvertFileAsync(ArchiveRequest request, IMediaConverter converter)
     {
         var filePath = request.NewPath.Absolute;
         var rootPath = request.NewPath.Root;
         var relativePath = request.NewPath.Relative;
         var outputDir = Path.GetDirectoryName(filePath)!;
 
-        var outputPath = await compressor.CompressAsync(filePath, outputDir);
+        var outputPath = await converter.ConvertAsync(filePath, outputDir, request.ActualFileType);
         if (outputPath == null)
         {
             Console.WriteLine($"  [ERR] {relativePath} - compression failed");
