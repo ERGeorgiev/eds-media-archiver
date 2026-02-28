@@ -1,11 +1,11 @@
 namespace EdsMediaArchiver.Models;
 
-public class ArchiveRequest(string rootPath, FileInfo fileInfo, string fileType, IReadOnlyList<MetadataExtractor.Directory> directories)
+public class ArchiveRequest(string rootPath, FileInfo fileInfo, string actualFileType, IReadOnlyList<MetadataExtractor.Directory> directories)
 {
     public PathInfo OriginalPath { get; } = new(rootPath, fileInfo.FullName);
     public PathInfo NewPath { get; set; } = new(rootPath, fileInfo.FullName);
     public FileInfo FileInfo { get; } = fileInfo;
-    public string FileType { get; } = fileType;
+    public string ActualFileType { get; } = actualFileType;
     public IReadOnlyList<MetadataExtractor.Directory> MetadataDirectories { get; } = directories;
 
     public DateTimeOffset? OriginDate { get; set; }

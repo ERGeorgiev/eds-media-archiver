@@ -27,11 +27,11 @@ public class ExtensionFixProcessor : IExtensionFixProcessor
 
         var newPath = Path.ChangeExtension(request.NewPath.Absolute, correctExt);
         newPath = GetUniqueFilePath(newPath);
+        request.NewPath = new(request.NewPath.Root, newPath);
 
-        File.Move(request.NewPath.Absolute, newPath);
+        File.Move(request.NewPath.Absolute, request.NewPath.Absolute);
 
         Console.WriteLine($"  [RENAME] {request.NewPath.Relative} -> {Path.GetFileName(newPath)} (actual type: {actualType})");
-        request.NewPath = new PathInfo(request.NewPath.Root, newPath);
         return true;
     }
 

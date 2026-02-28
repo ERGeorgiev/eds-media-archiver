@@ -14,10 +14,10 @@ public class ArchiveRequestFactory(IFileDateResolver dateResolver, IFileTypeReso
     public ArchiveRequest Create(string rootPath, string filePath)
     {
         var fileInfo = new FileInfo(filePath);
-        var fileType = fileTypeService.GetFileType(filePath);
+        var actualFileType = fileTypeService.GetActualFileType(filePath);
         var metadataDirectories = ImageMetadataReader.ReadMetadata(fileInfo.FullName);
         var originDate = dateResolver.ResolveBestDate(fileInfo, metadataDirectories);
-        return new ArchiveRequest(rootPath, fileInfo, fileType, metadataDirectories)
+        return new ArchiveRequest(rootPath, fileInfo, actualFileType, metadataDirectories)
         {
             OriginDate = originDate
         };

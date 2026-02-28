@@ -4,7 +4,7 @@ namespace EdsMediaArchiver.Services.Resolvers;
 
 public interface IFileTypeResolver
 {
-    string GetFileType(string filePath);
+    string GetActualFileType(string filePath);
 }
 
 public class FileTypeResolver : IFileTypeResolver
@@ -14,7 +14,7 @@ public class FileTypeResolver : IFileTypeResolver
     /// returning an uppercase type string matching the convention used by <see cref="MediaType"/>.
     /// Falls back to extension-based inference for types MetadataExtractor cannot detect.
     /// </summary>
-    public string GetFileType(string filePath)
+    public string GetActualFileType(string filePath)
     {
         try
         {

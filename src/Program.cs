@@ -96,12 +96,12 @@ var serviceProvider = new ServiceCollection()
     .AddSingleton<IExtensionFixProcessor, ExtensionFixProcessor>()
     .AddSingleton<ICompressProcessor, CompressProcessor>()
     .AddSingleton<IDateProcessor, DateProcessor>()
-    .AddSingleton<IMediaFileProcessor, MediaFileProcessor>()
+    .AddSingleton<IArchiveProcessor, ArchiveProcessor>()
     .AddSingleton<IArchiveRequestFactory, ArchiveRequestFactory>()
     .BuildServiceProvider();
 
 // Services
-var mediaFileProcessor = serviceProvider.GetRequiredService<IMediaFileProcessor>();
+var mediaFileProcessor = serviceProvider.GetRequiredService<IArchiveProcessor>();
 var fileRequestFactory = serviceProvider.GetRequiredService<IArchiveRequestFactory>();
 
 // Process each folder
