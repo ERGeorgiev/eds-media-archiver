@@ -25,7 +25,7 @@ public class TrueExtensionConverter : IMediaConverter
 
         var oldPath = sourcePath;
         var newPath = Path.ChangeExtension(oldPath, correctExt);
-        newPath = FileHelpers.GetUniqueFilePath(newPath);
+        newPath = FileHelper.GetUniqueFilePath(newPath);
 
         System.IO.File.Move(oldPath, newPath);
 

@@ -1,6 +1,6 @@
 ﻿namespace EdsMediaArchiver.Helpers;
 
-internal static class FileHelpers
+internal static class FileHelper
 {
     public static string GetUniqueFilePath(string path)
     {

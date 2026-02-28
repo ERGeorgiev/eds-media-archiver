@@ -1,3 +1,4 @@
+using EdsMediaArchiver.Helpers;
 using ImageMagick;
 
 namespace EdsMediaArchiver.Services.Converters;
@@ -7,12 +8,12 @@ namespace EdsMediaArchiver.Services.Converters;
 /// </summary>
 public class ImageConverter : IMediaConverter
 {
-    public bool IsSupported(string actualType) => MediaType.CompressibleImageTypes.Contains(actualType);
+    public bool IsSupported(string actualType) => MediaType.CompressibleImageTypes.Contains(actualType); // ToDo: What if already jpg?
 
     public async Task<string> ConvertAsync(string sourcePath, string outputDirectory, string actualType)
     {
         var outputPath = Path.Combine(outputDirectory, Path.GetFileNameWithoutExtension(sourcePath) + ".jpg");
-        outputPath = GetUniqueFilePath(outputPath);
+        outputPath = FileHelper.GetUniqueFilePath(outputPath);
 
         using var image = new MagickImage();
         await image.ReadAsync(sourcePath);
@@ -33,24 +34,5 @@ public class ImageConverter : IMediaConverter
 
         await image.WriteAsync(outputPath, MagickFormat.Jpeg);
         return outputPath;
-    }
-
-    private static string GetUniqueFilePath(string path)
-    {
-        if (!File.Exists(path)) return path;
-
-        var dir = Path.GetDirectoryName(path)!;
-        var baseName = Path.GetFileNameWithoutExtension(path);
-        var ext = Path.GetExtension(path);
-        var counter = 1;
-
-        string candidate;
-        do
-        {
-            candidate = Path.Combine(dir, $"{baseName}{counter}{ext}");
-            counter++;
-        } while (File.Exists(candidate));
-
-        return candidate;
     }
 }

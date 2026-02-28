@@ -1,3 +1,4 @@
+using EdsMediaArchiver.Helpers;
 using FFMpegCore;
 
 namespace EdsMediaArchiver.Services.Compressors;
@@ -15,7 +16,7 @@ public class AudioCompressor : IMediaCompressor
     {
         var outputPath = Path.Combine(outputDirectory,
             Path.GetFileNameWithoutExtension(sourcePath) + ".ogg");
-        outputPath = GetUniqueFilePath(outputPath);
+        outputPath = FileHelper.GetUniqueFilePath(outputPath);
 
         await FFMpegArguments
             .FromFileInput(sourcePath)
@@ -26,24 +27,5 @@ public class AudioCompressor : IMediaCompressor
             .ProcessAsynchronously();
 
         return outputPath;
-    }
-
-    private static string GetUniqueFilePath(string path)
-    {
-        if (!File.Exists(path)) return path;
-
-        var dir = Path.GetDirectoryName(path)!;
-        var baseName = Path.GetFileNameWithoutExtension(path);
-        var ext = Path.GetExtension(path);
-        var counter = 1;
-
-        string candidate;
-        do
-        {
-            candidate = Path.Combine(dir, $"{baseName}{counter}{ext}");
-            counter++;
-        } while (File.Exists(candidate));
-
-        return candidate;
     }
 }

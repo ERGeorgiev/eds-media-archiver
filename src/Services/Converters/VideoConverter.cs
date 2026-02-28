@@ -2,18 +2,16 @@ using EdsMediaArchiver.Helpers;
 using FFMpegCore;
 using FFMpegCore.Enums;
 
-namespace EdsMediaArchiver.Services.Compressors;
-
-public interface IVideoCompressor : IMediaCompressor { }
+namespace EdsMediaArchiver.Services.Converters;
 
 /// <summary>
-/// Compresses non-MP4 video formats to MP4 (H.264 + AAC).
+/// Converts non-MP4 video formats to MP4.
 /// </summary>
-public class VideoCompressor : IVideoCompressor
+public class VideoConverter : IMediaConverter
 {
-    public bool IsSupported(string actualType) => MediaType.CompressibleVideoTypes.Contains(actualType);
+    public bool IsSupported(string actualType) => MediaType.CompressibleImageTypes.Contains(actualType); // ToDo: What if already mp4?
 
-    public async Task<string> CompressAsync(string sourcePath, string outputDirectory)
+    public async Task<string> ConvertAsync(string sourcePath, string outputDirectory, string actualType)
     {
         var outputPath = Path.Combine(outputDirectory, Path.GetFileNameWithoutExtension(sourcePath) + ".mp4");
         outputPath = FileHelper.GetUniqueFilePath(outputPath);
@@ -22,10 +20,16 @@ public class VideoCompressor : IVideoCompressor
             .FromFileInput(sourcePath)
             .OutputToFile(outputPath, overwrite: false, options => options
                 .WithVideoCodec("libx264")
-                .WithConstantRateFactor(23)
+                // CRF 17 for "Visually Lossless"
+                .WithConstantRateFactor(17)
                 .WithSpeedPreset(Speed.Slow)
+                // High-Fidelity Audio
+                // 128kbps is "Radio" quality. Use 256 or 320 for "Pro" audio.
                 .WithAudioCodec("aac")
-                .WithAudioBitrate(128)
+                .WithAudioBitrate(192)
+
+                // Preserve Color Fidelity, "yuv420p" is the safe standard.
+                .WithCustomArgument("-pix_fmt yuv420p")
                 .WithCustomArgument("-map_metadata 0")
                 .WithCustomArgument("-movflags use_metadata_tags"))
             .ProcessAsynchronously();
