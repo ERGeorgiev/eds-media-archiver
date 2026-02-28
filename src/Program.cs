@@ -1,5 +1,4 @@
 using EdsMediaArchiver;
-using EdsMediaArchiver.Models;
 using EdsMediaArchiver.Services;
 using EdsMediaArchiver.Services.Compressors;
 using EdsMediaArchiver.Services.Converters;
@@ -8,9 +7,15 @@ using EdsMediaArchiver.Services.Logging;
 using EdsMediaArchiver.Services.Processors;
 using EdsMediaArchiver.Services.Resolvers;
 using EdsMediaArchiver.Services.Validators;
+using ImageMagick;
 using Microsoft.Extensions.DependencyInjection;
 using System.Diagnostics;
 using System.Reflection;
+
+//ToDo: Gifs, Transparent PNGs, Re-compressing JPGs (cases where its wanted and not)
+
+var format = MagickNET.SupportedFormats.First(f => f.Format == MagickFormat.Gif);
+var test = FFMpegCore.FFProbe.AnalyseAsync(Path.Combine(Directory.GetCurrentDirectory(), "TestData", "big-gif-converted3.jpg")).Result;
 
 Console.WriteLine();
 Console.WriteLine("================================================");
@@ -148,7 +153,7 @@ foreach (var inputPath in args)
         dirPath = Path.GetDirectoryName(inputPath) ?? "";
         files = [inputPath];
     }
-    var unsupportedFiles = files.Where(f => Constants.SupportedExtensions.Contains(Path.GetExtension(f)) == false).ToList(); // ToDo: Decide with actual type
+    var unsupportedFiles = files.Where(f => MediaType.SupportedTypes.Contains(Path.GetExtension(f)) == false).ToList(); // ToDo: Decide with actual type
     var supportedFiles = files.Except(unsupportedFiles).ToList();
     Console.WriteLine($"  Found {supportedFiles.Count} supported files");
     Console.WriteLine();

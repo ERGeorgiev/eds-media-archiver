@@ -8,14 +8,14 @@ namespace EdsMediaArchiver.Services.Compressors;
 /// </summary>
 public class AudioCompressor : IMediaCompressor
 {
-    public bool IsSupported(string actualType) =>
-        MediaType.AudioTypes.Contains(actualType) &&
-        !actualType.Equals(MediaType.Ogg, StringComparison.OrdinalIgnoreCase);
+    public bool IsSupported(string actualType) => MediaType.SupportedAudioTypes.Contains(actualType);
 
     public async Task<string> CompressAsync(string sourcePath, string outputDirectory)
     {
         var outputPath = Path.Combine(outputDirectory,
             Path.GetFileNameWithoutExtension(sourcePath) + ".ogg");
+        if (sourcePath == outputPath) 
+            return outputPath; // Already processed
         outputPath = FileHelper.GetUniqueFilePath(outputPath);
 
         await FFMpegArguments

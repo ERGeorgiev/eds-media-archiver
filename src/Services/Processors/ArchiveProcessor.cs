@@ -37,6 +37,8 @@ public class ArchiveProcessor(
                 request.NewPath = new(request.NewPath.Root, compressedFilePath);
             }
             
+            // ToDo: Instead of this, do a Compress/Standardize(if not compress)/SetDates
+            // That way, no need to wonder what supports EXIF what doesn't, what is read by a gallery what isn't.
             if (request.ConvertIfUnreliableForDates && IDateProcessor.IsReliableFileTypeForDate(request.ActualFileType))
             {
                 var convertedFilePath = await convertProcessor.ProcessAsync(request.NewPath.Absolute, request.NewPath.Directory, request.ActualFileType);

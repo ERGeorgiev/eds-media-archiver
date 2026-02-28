@@ -1,5 +1,6 @@
 using EdsMediaArchiver.Services.Logging;
 using EdsMediaArchiver.Services.Resolvers;
+using ImageMagick;
 using MetadataExtractor;
 
 namespace EdsMediaArchiver.Services.Processors;
@@ -45,7 +46,7 @@ public class DateProcessor(
     {
         if (MediaType.ExifWritableTypes.Contains(actualType))
             await metadataWriter.WriteExifDatesAsync(filePath, date);
-        else if (MediaType.VideoTypes.Contains(actualType))
+        else if (MediaType.SupportedVideoTypes.Contains(actualType))
             metadataWriter.WriteVideoDates(filePath, date);
         else if (actualType.Equals("PNG", StringComparison.OrdinalIgnoreCase))
             await metadataWriter.WritePngDatesAsync(filePath, date);

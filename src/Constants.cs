@@ -5,18 +5,6 @@ namespace EdsMediaArchiver;
 /// </summary>
 public static partial class Constants
 {
-    public static readonly HashSet<string> SupportedExtensions = new(StringComparer.OrdinalIgnoreCase)
-    {
-        // Images
-        ".jpg", ".jpeg", ".png", ".heic", ".heif",
-        ".bmp", ".gif", ".webp", ".tiff", ".tif",
-        // Video
-        ".mp4", ".mov", ".avi", ".mkv", ".mts", ".wmv", ".3gp",
-        // Audio
-        ".mp3", ".wav", ".flac", ".ogg", ".aac", ".wma", ".m4a"
-    };
-
-    /// <summary>Map from detected file type to correct extension (for fixing mislabeled files).</summary>
     public static readonly Dictionary<string, string> FileTypeToExtension = new(StringComparer.OrdinalIgnoreCase)
     {
         [MediaType.Jpeg] = ".jpg",
@@ -44,7 +32,6 @@ public static partial class Constants
         [MediaType.M4a] = ".m4a"
     };
 
-    /// <summary>Map from extension to file type for fallback detection.</summary>
     public static readonly Dictionary<string, string> ExtensionToFileType = new(StringComparer.OrdinalIgnoreCase)
     {
         [".jpg"] = MediaType.Jpeg,

@@ -11,7 +11,7 @@ public interface IVideoCompressor : IMediaCompressor { }
 /// </summary>
 public class VideoCompressor : IVideoCompressor
 {
-    public bool IsSupported(string actualType) => MediaType.CompressibleVideoTypes.Contains(actualType);
+    public bool IsSupported(string actualType) => MediaType.SupportedVideoTypes.Contains(actualType);
 
     public async Task<string> CompressAsync(string sourcePath, string outputDirectory)
     {

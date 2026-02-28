@@ -16,6 +16,8 @@ public class VideoConverter : IVideoConverter
     public async Task<string> ConvertAsync(string sourcePath, string outputDirectory, string actualType)
     {
         var outputPath = Path.Combine(outputDirectory, Path.GetFileNameWithoutExtension(sourcePath) + ".mp4");
+        if (sourcePath == outputPath)
+            return outputPath; // Already processed
         outputPath = FileHelper.GetUniqueFilePath(outputPath);
 
         await FFMpegArguments

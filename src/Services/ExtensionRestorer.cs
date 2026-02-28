@@ -1,16 +1,22 @@
 using EdsMediaArchiver.Helpers;
 using TagLib;
 
-namespace EdsMediaArchiver.Services.Converters;
+namespace EdsMediaArchiver.Services;
+
+public interface IExtensionRestorer
+{
+    bool IsSupported(string actualType);
+    Task<string> RestoreExtension(string sourcePath, string outputDirectory, string actualType);
+}
 
 /// <summary>
 /// Renames files to ensure their extension matches their actual type.
 /// </summary>
-public class TrueExtensionConverter : IMediaConverter
+public class ExtensionRestorer : IExtensionRestorer
 {
     public bool IsSupported(string actualType) => Constants.FileTypeToExtension.ContainsKey(actualType);
 
-    public Task<string> ConvertAsync(string sourcePath, string outputDirectory, string actualType)
+    public Task<string> RestoreExtension(string sourcePath, string outputDirectory, string actualType)
     {
         if (Constants.FileTypeToExtension.TryGetValue(actualType, out var correctExt) == false)
             throw new UnsupportedFormatException($"File '{sourcePath}' with type '{actualType}' is not supported.");

@@ -11,18 +11,20 @@ public interface IImageConverter : IMediaConverter { }
 /// </summary>
 public class ImageConverter : IImageConverter
 {
-    public bool IsSupported(string actualType) => MediaType.CompressibleImageTypes.Contains(actualType); // ToDo: What if already jpg?
+    public bool IsSupported(string actualType) => MediaType.CompressibleImageTypes.Contains(actualType);
 
     public async Task<string> ConvertAsync(string sourcePath, string outputDirectory, string actualType)
     {
         var outputPath = Path.Combine(outputDirectory, Path.GetFileNameWithoutExtension(sourcePath) + ".jpg");
+        if (sourcePath == outputPath)
+            return outputPath; // Already processed
         outputPath = FileHelper.GetUniqueFilePath(outputPath);
 
         using var image = new MagickImage();
         await image.ReadAsync(sourcePath);
 
         // 1. Conversion = Max Quality
-        image.Quality = 100;
+        image.Quality = 92;
 
         // 2. Disable Chroma Subsampling (Full Color Detail 4:4:4)
         image.Settings.SetDefine("jpeg:sampling-factor", "1x1,1x1,1x1");

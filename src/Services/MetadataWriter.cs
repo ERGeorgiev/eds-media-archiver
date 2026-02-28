@@ -4,6 +4,7 @@ namespace EdsMediaArchiver.Services;
 
 public interface IMetadataWriter
 {
+    void WriteAudioDates(string filePath, DateTimeOffset date);
     Task WriteExifDatesAsync(string filePath, DateTimeOffset date);
     Task WritePngDatesAsync(string filePath, DateTimeOffset date);
     void WriteVideoDates(string filePath, DateTimeOffset date);
@@ -69,6 +70,14 @@ public class MetadataWriter : IMetadataWriter
     }
 
     public void WriteVideoDates(string filePath, DateTimeOffset date)
+    {
+        using var file = TagLib.File.Create(filePath);
+        file.Tag.DateTagged = date.LocalDateTime;
+        file.Tag.Year = (uint)date.LocalDateTime.Year;
+        file.Save();
+    }
+
+    public void WriteAudioDates(string filePath, DateTimeOffset date)
     {
         using var file = TagLib.File.Create(filePath);
         file.Tag.DateTagged = date.LocalDateTime;
