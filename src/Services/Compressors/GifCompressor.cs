@@ -2,7 +2,7 @@ using FFMpegCore;
 using FFMpegCore.Enums;
 using ImageMagick;
 
-namespace EdsMediaArchiver.Services.Converters;
+namespace EdsMediaArchiver.Services.Compressors;
 
 /// <summary>
 /// Handles GIF compression: single-frame GIFs become JPG, multi-frame GIFs become MP4.

@@ -1,4 +1,4 @@
-namespace EdsMediaArchiver.Services.Converters;
+namespace EdsMediaArchiver.Services.Compressors;
 
 /// <summary>
 /// A compressor that can convert specific media types to a more optimal format.

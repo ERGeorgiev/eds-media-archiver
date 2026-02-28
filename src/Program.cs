@@ -1,7 +1,7 @@
 using EdsMediaArchiver;
 using EdsMediaArchiver.Models;
 using EdsMediaArchiver.Services;
-using EdsMediaArchiver.Services.Converters;
+using EdsMediaArchiver.Services.Compressors;
 using EdsMediaArchiver.Services.FileDateReaders;
 using EdsMediaArchiver.Services.Processors;
 using EdsMediaArchiver.Services.Resolvers;
@@ -92,7 +92,6 @@ var serviceProvider = new ServiceCollection()
     .AddSingleton<IOldestDateReader, OldestDateReader>()
     .AddSingleton<IFileDateResolver, FileDateResolver>()
     .AddSingleton<IFileTypeResolver, FileTypeResolver>()
-    // Media compressors (order matters — first match wins)
     .AddSingleton<IMediaCompressor, GifCompressor>()
     .AddSingleton<IMediaCompressor, ImageCompressor>()
     .AddSingleton<IMediaCompressor, VideoCompressor>()

@@ -1,33 +1,30 @@
 using FFMpegCore;
-using FFMpegCore.Enums;
 
-namespace EdsMediaArchiver.Services.Converters;
+namespace EdsMediaArchiver.Services.Compressors;
 
 /// <summary>
-/// Compresses non-MP4 video formats to MP4 (H.264 + AAC).
+/// Compresses audio files to OGG (Vorbis).
 /// </summary>
-public class VideoCompressor : IMediaCompressor
+public class AudioCompressor : IMediaCompressor
 {
-    public bool IsSupported(string actualType) => MediaType.CompressibleVideoTypes.Contains(actualType);
+    public bool IsSupported(string actualType) =>
+        MediaType.AudioTypes.Contains(actualType) &&
+        !actualType.Equals(MediaType.Ogg, StringComparison.OrdinalIgnoreCase);
 
     public async Task<string?> CompressAsync(string sourcePath, string outputDirectory)
     {
         try
         {
             var outputPath = Path.Combine(outputDirectory,
-                Path.GetFileNameWithoutExtension(sourcePath) + ".mp4");
+                Path.GetFileNameWithoutExtension(sourcePath) + ".ogg");
             outputPath = GetUniqueFilePath(outputPath);
 
             await FFMpegArguments
                 .FromFileInput(sourcePath)
                 .OutputToFile(outputPath, overwrite: false, options => options
-                    .WithVideoCodec("libx264")
-                    .WithConstantRateFactor(23)
-                    .WithSpeedPreset(Speed.Slow)
-                    .WithAudioCodec("aac")
-                    .WithAudioBitrate(128)
-                    .WithCustomArgument("-map_metadata 0")
-                    .WithCustomArgument("-movflags use_metadata_tags"))
+                    .WithAudioCodec("libvorbis")
+                    .WithCustomArgument("-qscale:a 5")
+                    .WithCustomArgument("-vn"))
                 .ProcessAsynchronously();
 
             return File.Exists(outputPath) ? outputPath : null;

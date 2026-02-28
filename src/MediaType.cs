@@ -18,6 +18,7 @@ public static class MediaType
     public const string QuickTime = "QuickTime";
     public const string Avi = "AVI";
     public const string Mkv = "MKV";
+    public const string Mts = "MTS";
     public const string Wmv = "WMV";
     public const string ThreeGp = "3GP";
 
@@ -75,6 +76,7 @@ public static class MediaType
         Mov,
         Avi,
         Mkv,
+        Mts,
         Wmv,
         ThreeGp,
         QuickTime

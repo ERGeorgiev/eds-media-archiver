@@ -1,5 +1,5 @@
 using EdsMediaArchiver.Models;
-using EdsMediaArchiver.Services.Converters;
+using EdsMediaArchiver.Services.Compressors;
 
 namespace EdsMediaArchiver.Services.Processors;
 

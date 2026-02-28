@@ -1,33 +1,31 @@
-using FFMpegCore;
+using ImageMagick;
 
-namespace EdsMediaArchiver.Services.Converters;
+namespace EdsMediaArchiver.Services.Compressors;
 
 /// <summary>
-/// Compresses audio files to OGG (Vorbis).
+/// Compresses XMP-only image formats (WebP, BMP, TIFF) to JPG.
 /// </summary>
-public class AudioCompressor : IMediaCompressor
+public class ImageCompressor : IMediaCompressor
 {
-    public bool IsSupported(string actualType) =>
-        MediaType.AudioTypes.Contains(actualType) &&
-        !actualType.Equals(MediaType.Ogg, StringComparison.OrdinalIgnoreCase);
+    public bool IsSupported(string actualType) => MediaType.CompressibleImageTypes.Contains(actualType);
 
     public async Task<string?> CompressAsync(string sourcePath, string outputDirectory)
     {
         try
         {
             var outputPath = Path.Combine(outputDirectory,
-                Path.GetFileNameWithoutExtension(sourcePath) + ".ogg");
+                Path.GetFileNameWithoutExtension(sourcePath) + ".jpg");
             outputPath = GetUniqueFilePath(outputPath);
 
-            await FFMpegArguments
-                .FromFileInput(sourcePath)
-                .OutputToFile(outputPath, overwrite: false, options => options
-                    .WithAudioCodec("libvorbis")
-                    .WithCustomArgument("-qscale:a 5")
-                    .WithCustomArgument("-vn"))
-                .ProcessAsynchronously();
+            using var image = new MagickImage();
+            await image.ReadAsync(sourcePath);
 
-            return File.Exists(outputPath) ? outputPath : null;
+            image.Quality = 95;
+            image.Settings.SetDefine("jpeg:sampling-factor", "4:2:0");
+            image.ColorSpace = ColorSpace.sRGB;
+
+            await image.WriteAsync(outputPath, MagickFormat.Jpeg);
+            return outputPath;
         }
         catch
         {

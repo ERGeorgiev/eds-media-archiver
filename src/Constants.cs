@@ -11,7 +11,7 @@ public static partial class Constants
         ".jpg", ".jpeg", ".png", ".heic", ".heif",
         ".bmp", ".gif", ".webp", ".tiff", ".tif",
         // Video
-        ".mp4", ".mov", ".avi", ".mkv", ".wmv", ".3gp",
+        ".mp4", ".mov", ".avi", ".mkv", ".mts", ".wmv", ".3gp",
         // Audio
         ".mp3", ".wav", ".flac", ".ogg", ".aac", ".wma", ".m4a"
     };
@@ -31,6 +31,7 @@ public static partial class Constants
         [MediaType.Mov] = ".mov",
         [MediaType.Avi] = ".avi",
         [MediaType.Mkv] = ".mkv",
+        [MediaType.Mts] = ".mts",
         [MediaType.Wmv] = ".wmv",
         [MediaType.ThreeGp] = ".3gp",
         [MediaType.QuickTime] = ".mov",
@@ -60,6 +61,7 @@ public static partial class Constants
         [".mov"] = MediaType.Mov,
         [".avi"] = MediaType.Avi,
         [".mkv"] = MediaType.Mkv,
+        [".mts"] = MediaType.Mts,
         [".wmv"] = MediaType.Wmv,
         [".3gp"] = MediaType.ThreeGp,
         [".mp3"] = MediaType.Mp3,
