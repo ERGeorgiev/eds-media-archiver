@@ -20,6 +20,16 @@ public static class MediaType
     public const string Mkv = "MKV";
     public const string Wmv = "WMV";
     public const string ThreeGp = "3GP";
+
+    // Audio Types
+    public const string Mp3 = "MP3";
+    public const string Wav = "WAV";
+    public const string Flac = "FLAC";
+    public const string Ogg = "OGG";
+    public const string Aac = "AAC";
+    public const string Wma = "WMA";
+    public const string M4a = "M4A";
+
     public const string Unknown = "UNKNOWN";
 
     public static readonly HashSet<string> ExifWritableTypes = new(StringComparer.OrdinalIgnoreCase)
@@ -40,12 +50,33 @@ public static class MediaType
         QuickTime
     };
 
-    /// <summary>File types that can only store XMP - need converting to JPG for proper EXIF.</summary>
-    public static readonly HashSet<string> XmpOnlyTypes = new(StringComparer.OrdinalIgnoreCase)
+    public static readonly HashSet<string> AudioTypes = new(StringComparer.OrdinalIgnoreCase)
+    {
+        Mp3,
+        Wav,
+        Flac,
+        Ogg,
+        Aac,
+        Wma,
+        M4a
+    };
+
+    /// <summary>Image types that can only store XMP — need converting to JPG for proper EXIF.</summary>
+    public static readonly HashSet<string> CompressibleImageTypes = new(StringComparer.OrdinalIgnoreCase)
     {
         Webp,
         Bmp,
-        Gif,
         Tiff
+    };
+
+    /// <summary>Video types that should be compressed to MP4.</summary>
+    public static readonly HashSet<string> CompressibleVideoTypes = new(StringComparer.OrdinalIgnoreCase)
+    {
+        Mov,
+        Avi,
+        Mkv,
+        Wmv,
+        ThreeGp,
+        QuickTime
     };
 }

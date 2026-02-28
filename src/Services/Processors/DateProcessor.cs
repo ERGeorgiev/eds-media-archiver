@@ -1,4 +1,5 @@
 using EdsMediaArchiver.Models;
+using EdsMediaArchiver.Services.Resolvers;
 
 namespace EdsMediaArchiver.Services.Processors;
 
@@ -6,14 +7,15 @@ public interface IDateProcessor
 {
     /// <summary>
     /// Writes date metadata and sets filesystem Created/Modified dates.
+    /// Determines the current file type from the file path (handles post-compression type changes).
     /// Skips if no valid date is available.
     /// </summary>
-    Task<ProcessingResult> ProcessAsync(ArchiveRequest request, string actualType);
+    Task<ProcessingResult> ProcessAsync(ArchiveRequest request);
 }
 
-public class DateProcessor(IMetadataWriter metadataWriter) : IDateProcessor
+public class DateProcessor(IMetadataWriter metadataWriter, IFileTypeResolver fileTypeResolver) : IDateProcessor
 {
-    public async Task<ProcessingResult> ProcessAsync(ArchiveRequest request, string actualType)
+    public async Task<ProcessingResult> ProcessAsync(ArchiveRequest request)
     {
         if (!request.OriginDate.HasValue)
         {
@@ -23,8 +25,9 @@ public class DateProcessor(IMetadataWriter metadataWriter) : IDateProcessor
 
         var filePath = request.NewPath.Absolute;
         var date = request.OriginDate.Value;
+        var currentType = fileTypeResolver.GetActualFileType(filePath);
 
-        await WriteDateForTypeAsync(filePath, actualType, date);
+        await WriteDateForTypeAsync(filePath, currentType, date);
         SetFilesystemDates(filePath, date);
 
         Console.WriteLine($"  [OK] {request.NewPath.Relative} -> {date:yyyy-MM-dd HH:mm:ss}");
