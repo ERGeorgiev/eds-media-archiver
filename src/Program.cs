@@ -17,7 +17,7 @@ Console.WriteLine("  Prepare your media files for storage.");
 Console.WriteLine("================================================");
 Console.WriteLine();
 
-if (Debugger.IsAttached) 
+if (Debugger.IsAttached)
     args = [$"{Path.Combine(Directory.GetCurrentDirectory(), "TestData")}", $"{Path.Combine(Directory.GetCurrentDirectory(), "TestData2")}"];
 
 // Validate input paths
@@ -30,18 +30,52 @@ if (args.Length == 0)
     return 1;
 }
 
-Console.WriteLine("  This tool will:");
-Console.WriteLine("    - Detect actual file types and fix wrong extensions");
-Console.WriteLine("    - Convert media that doesn't support EXIF date metadata (WebP, BMP, GIF, TIFF, MTS, WAV) to JPG/MP4");
-Console.WriteLine("    - Write date metadata and set filesystem dates");
-Console.WriteLine("    - DELETE input files as it's creating new ones");
+// Ask user preferences
+Console.WriteLine("  What would you like to do?");
+Console.WriteLine();
+
+Console.WriteLine("  Fix file extensions?");
+Console.WriteLine("    Detects actual file types and renames mislabeled extensions.");
+Console.Write("    (Y/n): ");
+var fixExtensions = AskYesNo();
+Console.WriteLine();
+
+Console.WriteLine("  Compress files?");
+Console.WriteLine("    Converts formats without EXIF support (WebP, BMP, GIF, TIFF) to JPG.");
+Console.WriteLine("    Note: Dates are automatically written to compressed files.");
+Console.Write("    (Y/n): ");
+var compress = AskYesNo();
+Console.WriteLine();
+
+Console.WriteLine("  Set file dates?");
+Console.WriteLine("    Writes date metadata and sets filesystem Created/Modified dates.");
+if (compress)
+    Console.WriteLine("    Applies to files not already handled by compression.");
+Console.Write("    (Y/n): ");
+var setDates = AskYesNo();
+
+if (!fixExtensions && !compress && !setDates)
+{
+    Console.WriteLine();
+    Console.WriteLine("  No options selected. Nothing to do.");
+    Console.Write("Press any key to exit...");
+    Console.ReadLine();
+    return 0;
+}
+
+var preferences = new UserPreferences(fixExtensions, compress, setDates);
+
+Console.WriteLine();
+Console.WriteLine("  Selected options:");
+if (fixExtensions) Console.WriteLine("    - Fix file extensions");
+if (compress)      Console.WriteLine("    - Compress files (with date metadata)");
+if (setDates)      Console.WriteLine("    - Set file dates");
 
 // ToDo: Verify backup folder created
 
 Console.WriteLine();
-Console.Write("  Proceed? (Y/n) ");
-var confirm = Console.ReadLine();
-if (confirm?.TrimStart().StartsWith("Y", StringComparison.OrdinalIgnoreCase) == false)
+Console.Write("  Proceed? (Y/n): ");
+if (!AskYesNo())
 {
     Console.WriteLine("  Cancelled.");
     Console.Write("Press any key to exit...");
@@ -59,6 +93,9 @@ var serviceProvider = new ServiceCollection()
     .AddSingleton<IFileDateResolver, FileDateResolver>()
     .AddSingleton<IFileTypeResolver, FileTypeResolver>()
     .AddSingleton<IImageConverter, ImageConverter>()
+    .AddSingleton<IExtensionFixProcessor, ExtensionFixProcessor>()
+    .AddSingleton<ICompressProcessor, CompressProcessor>()
+    .AddSingleton<IDateProcessor, DateProcessor>()
     .AddSingleton<IMediaFileProcessor, MediaFileProcessor>()
     .AddSingleton<IArchiveRequestFactory, ArchiveRequestFactory>()
     .BuildServiceProvider();
@@ -66,12 +103,6 @@ var serviceProvider = new ServiceCollection()
 // Services
 var mediaFileProcessor = serviceProvider.GetRequiredService<IMediaFileProcessor>();
 var fileRequestFactory = serviceProvider.GetRequiredService<IArchiveRequestFactory>();
-
-// 1. Get all files
-// 2. Rename mistyped files
-// 3. Convert unsupported
-// 4. Compress
-// 5. Date
 
 // Process each folder
 foreach (var inputPath in args)
@@ -114,6 +145,9 @@ foreach (var inputPath in args)
         try
         {
             var request = fileRequestFactory.Create(dirPath, file);
+            request.FixExtension = preferences.FixExtensions;
+            request.Compress = preferences.Compress;
+            request.SetDates = preferences.SetDates;
             return await mediaFileProcessor.ProcessFileAsync(request);
         }
         finally
@@ -130,6 +164,7 @@ foreach (var inputPath in args)
     Console.WriteLine($"Summary");
     var fixedFiles = results.Where(r => r.Status == ProcessingStatus.Fixed).ToList();
     var convertedFiles = results.Where(r => r.Status == ProcessingStatus.Converted).ToList();
+    var renamedFiles = results.Where(r => r.Status == ProcessingStatus.Renamed).ToList();
     var skippedFiles = results.Where(r => r.Status == ProcessingStatus.Skipped).ToList();
     var errorFiles = results.Where(r => r.Status == ProcessingStatus.Error).ToList();
 
@@ -157,6 +192,14 @@ foreach (var inputPath in args)
             Console.WriteLine($"    {r.RelativePath,-60} {r.DateAssigned:yyyy-MM-dd HH:mm:ss}");
     }
 
+    if (renamedFiles.Count > 0)
+    {
+        Console.WriteLine();
+        Console.WriteLine("  Renamed (extension fixed):");
+        foreach (var r in renamedFiles)
+            Console.WriteLine($"    {r.RelativePath,-60}");
+    }
+
     if (skippedFiles.Count > 0)
     {
         Console.WriteLine();
@@ -177,6 +220,7 @@ foreach (var inputPath in args)
     Console.WriteLine("  Results:");
     Console.WriteLine($"    Processed:  {fixedFiles.Count}");
     Console.WriteLine($"    Converted:  {convertedFiles.Count}");
+    Console.WriteLine($"    Renamed:    {renamedFiles.Count}");
     Console.WriteLine($"    Skipped:    {skippedFiles.Count}");
     Console.WriteLine($"    Errors:     {errorFiles.Count}");
 }
@@ -190,3 +234,9 @@ Console.Write("Press any key to exit...");
 Console.ReadLine();
 
 return 0;
+
+static bool AskYesNo()
+{
+    var input = Console.ReadLine()?.Trim();
+    return string.IsNullOrEmpty(input) || input.StartsWith("y", StringComparison.OrdinalIgnoreCase);
+}

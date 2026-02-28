@@ -4,6 +4,7 @@ public enum ProcessingStatus
 {
     Fixed,
     Converted,
+    Renamed,
     Skipped,
     Error
 }
