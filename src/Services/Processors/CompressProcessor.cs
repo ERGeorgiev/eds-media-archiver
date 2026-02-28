@@ -6,66 +6,91 @@ namespace EdsMediaArchiver.Services.Processors;
 public interface ICompressProcessor
 {
     /// <summary>
-    /// Converts XMP-only format files to JPG. Writes dates if available.
-    /// Returns null if not applicable (file is not an XMP-only type).
+    /// Fixes the file extension and/or compresses the file based on request flags.
+    /// Returns null if no action was taken.
     /// </summary>
-    Task<ProcessingResult?> ProcessAsync(ArchiveRequest request, string actualType);
+    Task<ProcessingResult?> ProcessAsync(ArchiveRequest request);
 }
 
-public class CompressProcessor(IImageConverter imageConverter, IMetadataWriter metadataWriter) : ICompressProcessor
+public class CompressProcessor(IEnumerable<IMediaCompressor> compressors) : ICompressProcessor
 {
-    public async Task<ProcessingResult?> ProcessAsync(ArchiveRequest request, string actualType)
+    public async Task<ProcessingResult?> ProcessAsync(ArchiveRequest request)
     {
-        // Only applicable to XMP-only types — formats that can't store EXIF dates natively
-        if (!MediaType.XmpOnlyTypes.Contains(actualType))
-            return null;
+        var actualType = request.ActualFileType;
+        bool wasRenamed = false;
 
+        // 1. Fix extension if requested
+        if (request.FixExtension)
+            wasRenamed = FixExtension(request, actualType);
+
+        // 2. Compress if requested
+        if (request.Compress)
+        {
+            var compressor = compressors.FirstOrDefault(c => c.IsSupported(actualType));
+            if (compressor != null)
+            {
+                var result = await CompressFileAsync(request, compressor);
+                if (result != null)
+                    return result;
+            }
+        }
+
+        // 3. If only extension was fixed, report that
+        if (wasRenamed)
+            return new ProcessingResult(request.NewPath.Relative, null, ProcessingStatus.Renamed);
+
+        return null;
+    }
+
+    private static bool FixExtension(ArchiveRequest request, string actualType)
+    {
+        if (!Constants.FileTypeToExtension.TryGetValue(actualType, out var correctExt))
+            return false;
+
+        var currentExt = Path.GetExtension(request.NewPath.Absolute);
+        var normCurrent = NormalizeExtension(currentExt);
+        var normCorrect = NormalizeExtension(correctExt);
+
+        if (normCurrent.Equals(normCorrect, StringComparison.OrdinalIgnoreCase))
+            return false;
+
+        var oldPath = request.NewPath.Absolute;
+        var newPath = Path.ChangeExtension(oldPath, correctExt);
+        newPath = GetUniqueFilePath(newPath);
+
+        File.Move(oldPath, newPath);
+        request.NewPath = new PathInfo(request.NewPath.Root, newPath);
+
+        Console.WriteLine($"  [RENAME] {request.OriginalPath.Relative} -> {Path.GetFileName(newPath)} (actual type: {actualType})");
+        return true;
+    }
+
+    private static async Task<ProcessingResult?> CompressFileAsync(ArchiveRequest request, IMediaCompressor compressor)
+    {
         var filePath = request.NewPath.Absolute;
         var rootPath = request.NewPath.Root;
         var relativePath = request.NewPath.Relative;
+        var outputDir = Path.GetDirectoryName(filePath)!;
 
-        var jpgPath = Path.ChangeExtension(filePath, ".jpg");
-        if (File.Exists(jpgPath) && !string.Equals(jpgPath, filePath, StringComparison.OrdinalIgnoreCase))
-            jpgPath = GetUniqueFilePath(jpgPath);
-
-        var success = await imageConverter.ConvertToJpgAsync(filePath, jpgPath);
-        if (!success)
+        var outputPath = await compressor.CompressAsync(filePath, outputDir);
+        if (outputPath == null)
         {
-            if (request.OriginDate.HasValue)
-            {
-                Console.WriteLine($"  [ERR] {relativePath} - conversion failed, falling back to XMP dates");
-                await metadataWriter.WriteXmpDatesAsync(filePath, request.OriginDate.Value);
-                SetFilesystemDates(filePath, request.OriginDate.Value);
-                return new ProcessingResult(relativePath, request.OriginDate.Value, ProcessingStatus.Fixed);
-            }
-
-            Console.WriteLine($"  [ERR] {relativePath} - conversion failed");
-            return new ProcessingResult(relativePath, null, ProcessingStatus.Error, "Conversion failed");
+            Console.WriteLine($"  [ERR] {relativePath} - compression failed");
+            return new ProcessingResult(relativePath, null, ProcessingStatus.Error, "Compression failed");
         }
 
-        // Write dates to the new JPG if available
-        if (request.OriginDate.HasValue)
-        {
-            await metadataWriter.WriteExifDatesAsync(jpgPath, request.OriginDate.Value);
-            SetFilesystemDates(jpgPath, request.OriginDate.Value);
-        }
+        // Delete the original file (compressor creates a new one)
+        if (!string.Equals(filePath, outputPath, StringComparison.OrdinalIgnoreCase))
+            File.Delete(filePath);
 
-        File.Delete(filePath);
-
-        var jpgRelative = Path.GetRelativePath(rootPath, jpgPath);
-        var dateDisplay = request.OriginDate.HasValue
-            ? $" ({request.OriginDate.Value:yyyy-MM-dd HH:mm:ss})"
-            : "";
-        Console.WriteLine($"  [CONV] {relativePath} -> {jpgRelative}{dateDisplay}");
-        request.NewPath = new PathInfo(rootPath, jpgPath);
-        return new ProcessingResult(relativePath, request.OriginDate, ProcessingStatus.Converted);
+        var outputRelative = Path.GetRelativePath(rootPath, outputPath);
+        Console.WriteLine($"  [CONV] {relativePath} -> {outputRelative}");
+        request.NewPath = new PathInfo(rootPath, outputPath);
+        return new ProcessingResult(relativePath, null, ProcessingStatus.Converted);
     }
 
-    private static void SetFilesystemDates(string filePath, DateTimeOffset date)
-    {
-        File.SetCreationTime(filePath, date.LocalDateTime);
-        File.SetLastWriteTime(filePath, date.LocalDateTime);
-    }
+    private static string NormalizeExtension(string ext) =>
+        ext.Equals(".jpeg", StringComparison.OrdinalIgnoreCase) ? ".jpg" : ext.ToLowerInvariant();
 
     private static string GetUniqueFilePath(string path)
     {

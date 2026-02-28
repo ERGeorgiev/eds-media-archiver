@@ -41,16 +41,16 @@ var fixExtensions = AskYesNo();
 Console.WriteLine();
 
 Console.WriteLine("  Compress files?");
-Console.WriteLine("    Converts formats without EXIF support (WebP, BMP, GIF, TIFF) to JPG.");
-Console.WriteLine("    Note: Dates are automatically written to compressed files.");
+Console.WriteLine("    Converts media to optimal formats:");
+Console.WriteLine("      Images (WebP, BMP, TIFF, GIF) -> JPG (multi-frame GIF -> MP4)");
+Console.WriteLine("      Video  (AVI, MKV, WMV, MOV, 3GP) -> MP4 (H.264 + AAC)");
+Console.WriteLine("      Audio  (MP3, WAV, FLAC, AAC, WMA, M4A) -> OGG (Vorbis)");
 Console.Write("    (Y/n): ");
 var compress = AskYesNo();
 Console.WriteLine();
 
 Console.WriteLine("  Set file dates?");
 Console.WriteLine("    Writes date metadata and sets filesystem Created/Modified dates.");
-if (compress)
-    Console.WriteLine("    Applies to files not already handled by compression.");
 Console.Write("    (Y/n): ");
 var setDates = AskYesNo();
 
@@ -68,7 +68,7 @@ var preferences = new UserPreferences(fixExtensions, compress, setDates);
 Console.WriteLine();
 Console.WriteLine("  Selected options:");
 if (fixExtensions) Console.WriteLine("    - Fix file extensions");
-if (compress)      Console.WriteLine("    - Compress files (with date metadata)");
+if (compress)      Console.WriteLine("    - Compress files");
 if (setDates)      Console.WriteLine("    - Set file dates");
 
 // ToDo: Verify backup folder created
@@ -92,8 +92,11 @@ var serviceProvider = new ServiceCollection()
     .AddSingleton<IOldestDateReader, OldestDateReader>()
     .AddSingleton<IFileDateResolver, FileDateResolver>()
     .AddSingleton<IFileTypeResolver, FileTypeResolver>()
-    .AddSingleton<IImageConverter, ImageConverter>()
-    .AddSingleton<IExtensionFixProcessor, ExtensionFixProcessor>()
+    // Media compressors (order matters — first match wins)
+    .AddSingleton<IMediaCompressor, GifCompressor>()
+    .AddSingleton<IMediaCompressor, ImageCompressor>()
+    .AddSingleton<IMediaCompressor, VideoCompressor>()
+    .AddSingleton<IMediaCompressor, AudioCompressor>()
     .AddSingleton<ICompressProcessor, CompressProcessor>()
     .AddSingleton<IDateProcessor, DateProcessor>()
     .AddSingleton<IArchiveProcessor, ArchiveProcessor>()
@@ -187,7 +190,7 @@ foreach (var inputPath in args)
     if (convertedFiles.Count > 0)
     {
         Console.WriteLine();
-        Console.WriteLine("  Converted to JPG:"); // todo: to converted any to any
+        Console.WriteLine("  Converted:");
         foreach (var r in convertedFiles)
             Console.WriteLine($"    {r.RelativePath,-60} {r.DateAssigned:yyyy-MM-dd HH:mm:ss}");
     }

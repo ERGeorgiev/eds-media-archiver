@@ -7,9 +7,13 @@ public static partial class Constants
 {
     public static readonly HashSet<string> SupportedExtensions = new(StringComparer.OrdinalIgnoreCase)
     {
-        ".jpg", ".jpeg", ".png", ".mp4", ".mov", ".heic", ".heif",
-        ".bmp", ".gif", ".webp", ".avi", ".mkv", ".wmv", ".3gp",
-        ".tiff", ".tif"
+        // Images
+        ".jpg", ".jpeg", ".png", ".heic", ".heif",
+        ".bmp", ".gif", ".webp", ".tiff", ".tif",
+        // Video
+        ".mp4", ".mov", ".avi", ".mkv", ".wmv", ".3gp",
+        // Audio
+        ".mp3", ".wav", ".flac", ".ogg", ".aac", ".wma", ".m4a"
     };
 
     /// <summary>Map from detected file type to correct extension (for fixing mislabeled files).</summary>
@@ -29,10 +33,17 @@ public static partial class Constants
         [MediaType.Mkv] = ".mkv",
         [MediaType.Wmv] = ".wmv",
         [MediaType.ThreeGp] = ".3gp",
-        [MediaType.QuickTime] = ".mov"
+        [MediaType.QuickTime] = ".mov",
+        [MediaType.Mp3] = ".mp3",
+        [MediaType.Wav] = ".wav",
+        [MediaType.Flac] = ".flac",
+        [MediaType.Ogg] = ".ogg",
+        [MediaType.Aac] = ".aac",
+        [MediaType.Wma] = ".wma",
+        [MediaType.M4a] = ".m4a"
     };
 
-    /// <summary>Map from detected file type to correct extension (for fixing mislabeled files).</summary>
+    /// <summary>Map from extension to file type for fallback detection.</summary>
     public static readonly Dictionary<string, string> ExtensionToFileType = new(StringComparer.OrdinalIgnoreCase)
     {
         [".jpg"] = MediaType.Jpeg,
@@ -50,6 +61,13 @@ public static partial class Constants
         [".avi"] = MediaType.Avi,
         [".mkv"] = MediaType.Mkv,
         [".wmv"] = MediaType.Wmv,
-        [".3gp"] = MediaType.ThreeGp
+        [".3gp"] = MediaType.ThreeGp,
+        [".mp3"] = MediaType.Mp3,
+        [".wav"] = MediaType.Wav,
+        [".flac"] = MediaType.Flac,
+        [".ogg"] = MediaType.Ogg,
+        [".aac"] = MediaType.Aac,
+        [".wma"] = MediaType.Wma,
+        [".m4a"] = MediaType.M4a
     };
 }

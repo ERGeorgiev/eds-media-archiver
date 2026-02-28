@@ -12,7 +12,6 @@ public interface IArchiveProcessor
 /// based on the user's preferences set on the request.
 /// </summary>
 public class ArchiveProcessor(
-    IExtensionFixProcessor extensionFixProcessor,
     ICompressProcessor compressProcessor,
     IDateProcessor dateProcessor) : IArchiveProcessor
 {
@@ -20,23 +19,27 @@ public class ArchiveProcessor(
     {
         try
         {
-            if (request.FixExtension)
-                extensionFixProcessor.Process(request, request.ActualFileType);
+            ProcessingResult? compressResult = null;
 
-            if (request.Compress)
+            // 1. Extension fix + compression (merged into one step)
+            if (request.FixExtension || request.Compress)
+                compressResult = await compressProcessor.ProcessAsync(request);
+
+            // 2. Date setting (handles all types, including post-compression)
+            if (request.SetDates)
             {
-                var result = await compressProcessor.ProcessAsync(request, request.ActualFileType);
-                if (result != null) return result;
+                var dateResult = await dateProcessor.ProcessAsync(request);
+
+                // If compressed and dates set, prefer Converted status but include the date
+                if (compressResult?.Status == ProcessingStatus.Converted)
+                    return new ProcessingResult(compressResult.RelativePath, dateResult.DateAssigned, ProcessingStatus.Converted);
+
+                return dateResult;
             }
 
-            if (request.SetDates)
-                return await dateProcessor.ProcessAsync(request, request.ActualFileType);
-
-            // Only extension was fixed — detect via path change
-            if (request.NewPath.Absolute != request.OriginalPath.Absolute)
-                return new ProcessingResult(request.NewPath.Relative, null, ProcessingStatus.Renamed);
-
-            File.Move(request.OriginalPath.Absolute, request.NewPath.Absolute);
+            // Return compress/rename result if no date processing
+            if (compressResult != null)
+                return compressResult;
 
             Console.WriteLine($"  [SKIP] {request.NewPath.Relative} - no applicable processing");
             return new ProcessingResult(request.NewPath.Relative, null, ProcessingStatus.Skipped, "No applicable processing");
