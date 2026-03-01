@@ -1,4 +1,5 @@
-﻿using static EdsMediaArchiver.Services.Logging.IProcessLogger;
+﻿using System.Collections.Concurrent;
+using static EdsMediaArchiver.Services.Logging.IProcessLogger;
 
 namespace EdsMediaArchiver.Services.Logging;
 
@@ -34,7 +35,8 @@ public record ProcessLog (Operation Operation, Result Result, string FilePath, s
 
 public class ProcessLogger : IProcessLogger
 {
-    public readonly List<ProcessLog> _logs = [];
+    public readonly ConcurrentBag<ProcessLog> _logs = [];
+    public readonly ConcurrentDictionary<string, List<ProcessLog>> _logsPerFile = [];
 
     public IEnumerable<ProcessLog> Logs => _logs;
 
@@ -42,6 +44,8 @@ public class ProcessLogger : IProcessLogger
     {
         var log = new ProcessLog(operation, result, filePath, message);
         _logs.Add(log);
+        var key = Path.Combine(Path.GetDirectoryName(filePath)!, Path.GetFileNameWithoutExtension(filePath));
+        _logsPerFile.AddOrUpdate(key, [log], (k, v) => { v.Add(log); return v; });
         PrintLog(log);
     }
 

@@ -24,7 +24,14 @@ public class CompressProcessor(IEnumerable<IMediaCompressor> compressors, IProce
             // Delete the original file (compressor creates a new one)
             if (string.Equals(sourcePath, outputPath, StringComparison.OrdinalIgnoreCase))
             {
-                processLogger.Log(IProcessLogger.Operation.Compress, IProcessLogger.Result.Skip, sourcePath, $"");
+                if (compressorMode == CompressorMode.Convert)
+                {
+                    processLogger.Log(IProcessLogger.Operation.Convert, IProcessLogger.Result.Skip, sourcePath, $"Not necessary.");
+                }
+                else
+                {
+                    processLogger.Log(IProcessLogger.Operation.Compress, IProcessLogger.Result.Success, sourcePath, "");
+                }
                 return outputPath;
             }
 

@@ -23,12 +23,25 @@ public class ImageCompressor : IImageCompressor
     public async Task<string> CompressAsync(string sourcePath, string outputDirectory, CompressorMode compressorMode)
     {
         var outputPath = Path.Combine(outputDirectory, Path.GetFileNameWithoutExtension(sourcePath) + ".jpg");
-        if (compressorMode == CompressorMode.Convert && sourcePath == outputPath)
-            return outputPath; // Already converted
-        outputPath = FileHelper.GetUniqueFilePath(outputPath);
+        if (sourcePath == outputPath && compressorMode == CompressorMode.Convert) // source already .jpg
+        {
+            return outputPath;
+        }
 
         using var image = new MagickImage();
         await image.ReadAsync(sourcePath);
+        if (sourcePath == outputPath && compressorMode != CompressorMode.Convert)
+        {
+            // CRITERIA CHECK: If already .jpg, check if it actually needs Compression
+            bool isTooLarge = image.Width > 1920 || image.Height > 1920;
+            bool isHighQuality = image.Quality > 88;
+
+            if (!isTooLarge && !isHighQuality)
+            {
+                // If it's already small and lower quality, do not compress to avoid generation loss.
+                return outputPath;
+            }
+        }
 
         image.AutoOrient();
         switch (compressorMode)
@@ -59,6 +72,7 @@ public class ImageCompressor : IImageCompressor
                 throw new NotSupportedException($"Mode {compressorMode} not supported");
         }
 
+        outputPath = FileHelper.GetUniqueFilePath(outputPath);
         await image.WriteAsync(outputPath, MagickFormat.Jpeg);
         return outputPath;
     }

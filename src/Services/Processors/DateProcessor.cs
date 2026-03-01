@@ -43,14 +43,12 @@ public class DateProcessor(
 
     private async Task WriteDateForTypeAsync(string filePath, string actualType, DateTimeOffset date)
     {
-        if (MediaType.DateWritableImageTypes.Contains(actualType))
-            await metadataWriter.WriteExifDatesAsync(filePath, date);
+        if (MediaType.SupportedImageTypes.Contains(actualType))
+            await metadataWriter.WriteImageDatesAsync(filePath, date);
         else if (MediaType.SupportedVideoTypes.Contains(actualType))
             metadataWriter.WriteVideoDates(filePath, date);
-        else if (actualType.Equals("PNG", StringComparison.OrdinalIgnoreCase))
-            await metadataWriter.WritePngDatesAsync(filePath, date);
-        else
-            await metadataWriter.WriteXmpDatesAsync(filePath, date);
+        else if (MediaType.SupportedAudioTypes.Contains(actualType))
+            metadataWriter.WriteAudioDates(filePath, date);
     }
 
     private static void SetFilesystemDates(string filePath, DateTimeOffset date)

@@ -25,13 +25,10 @@ public class ArchiveProcessor(
     {
         try
         {
-            if (ExtensionsTypes.FileTypeToExtension.TryGetValue(request.ActualFileType, out var actualExtension))
+            if (MediaType.SupportedTypes.Contains(request.ActualFileType) == false)
             {
-                if (ExtensionsTypes.SupportedExtensions.Contains(actualExtension) == false)
-                {
-                    processLogger.Log(IProcessLogger.Operation.Archive, IProcessLogger.Result.Skip, request.OriginalPath.Absolute, $"Unsupported FileType '{request.ActualFileType}'");
-                    return;
-                }
+                processLogger.Log(IProcessLogger.Operation.Archive, IProcessLogger.Result.Skip, request.OriginalPath.Absolute, $"Unsupported FileType '{request.ActualFileType}'");
+                return;
             }
 
             if (request.Compress)
