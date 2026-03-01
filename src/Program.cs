@@ -32,6 +32,10 @@ if (args.Length == 0)
     return 1;
 }
 
+Console.WriteLine($"  Input:");
+Console.WriteLine($"    {string.Join(Environment.NewLine + "    ", args)}");
+Console.WriteLine();
+
 if (ConsoleHelper.TryGetUserPreferences(out var prefs) == false)
 {
     Console.Write("Press any key to exit...");
