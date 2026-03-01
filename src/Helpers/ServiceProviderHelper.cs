@@ -35,7 +35,7 @@ internal static class ServiceProviderHelper
 
             // Processors
             .AddSingleton<ICompressProcessor, CompressProcessor>()
-            .AddSingleton<IDateProcessor, DateProcessor>()
+            .AddSingleton<IFileDateWriter, FileDateWriter>()
             .AddSingleton<IArchiveProcessor, ArchiveProcessor>()
 
             // Resolvers

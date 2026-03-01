@@ -3,6 +3,8 @@ using EdsMediaArchiver.Models;
 using EdsMediaArchiver.Services.Compressors;
 using EdsMediaArchiver.Services.Logging;
 using EdsMediaArchiver.Services.Resolvers;
+using EdsMediaArchiver.Services.Writers;
+using MetadataExtractor;
 
 namespace EdsMediaArchiver.Services.Processors;
 
@@ -17,8 +19,9 @@ public interface IArchiveProcessor
 /// </summary>
 public class ArchiveProcessor(
     ICompressProcessor compressProcessor,
-    IDateProcessor dateProcessor,
+    IFileDateWriter dateProcessor,
     IFileExtensionResolver extensionRestorer,
+    IFileDateResolver fileDateResolver,
     IProcessLogger processLogger) : IArchiveProcessor
 {
     public async Task ProcessFileAsync(ArchiveRequest request)
@@ -29,6 +32,13 @@ public class ArchiveProcessor(
             {
                 processLogger.Log(IProcessLogger.Operation.Archive, IProcessLogger.Result.SKIPPED, request.OriginalPath.Absolute, $"Unsupported FileType '{request.ActualFileType}'");
                 return;
+            }
+
+            DateTimeOffset? setDate = null;
+            if (request.SetDates)
+            {
+                var metadataDirectories = ImageMetadataReader.ReadMetadata(request.OriginalPath.Absolute);
+                setDate = fileDateResolver.ResolveBestDate(request.OriginalPath.Absolute, metadataDirectories);
             }
 
             if (request.Compress)
@@ -47,7 +57,15 @@ public class ArchiveProcessor(
 
             if (request.SetDates)
             {
-                var dateResult = await dateProcessor.ProcessAsync(request.NewPath.Absolute, request.NewPath.Directory, request.ActualFileType);
+                if (setDate == null)
+                {
+                    processLogger.Log(IProcessLogger.Operation.SetDate, IProcessLogger.Result.SKIPPED, request.OriginalPath.Absolute, "No valid dates found.");
+                }
+                else
+                {
+                    var dateResult = await dateProcessor.WriteDateToFileAsync(request.NewPath.Absolute, request.ActualFileType, setDate.Value);
+                    processLogger.Log(IProcessLogger.Operation.SetDate, IProcessLogger.Result.SUCCESS, request.OriginalPath.Absolute, $"{setDate:yyyy-MM-dd HH:mm:ss}");
+                }
             }
         }
         catch (Exception ex)

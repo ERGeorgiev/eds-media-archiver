@@ -10,11 +10,7 @@ public interface IFileDateResolver
 }
 
 /// <summary>
-/// Determines the best date for a media file using the priority:
-///   1. DateTimeOriginal (EXIF) — wins unconditionally
-///   2. Date embedded in filename (YYYYMMDD patterns)
-///   3. Unix timestamp embedded in filename
-///   4. Oldest from other trusted EXIF/XMP tags + filesystem dates
+/// Determines the best date for a media file.
 /// </summary>
 public partial class FileDateResolver(
     IOriginalDateReader originalDateReader,
