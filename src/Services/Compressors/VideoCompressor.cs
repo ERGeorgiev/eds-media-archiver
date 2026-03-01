@@ -3,7 +3,6 @@ using EdsMediaArchiver.Helpers;
 using EdsMediaArchiver.Services.Resolvers;
 using FFMpegCore;
 using FFMpegCore.Enums;
-using XmpCore.Options;
 
 namespace EdsMediaArchiver.Services.Compressors;
 
@@ -27,14 +26,16 @@ public class VideoCompressor(IFileDateResolver fileDateResolver) : IVideoCompres
 
     public bool IsSupported(string actualType) => SupportedTypes.Contains(actualType);
 
-    public async Task<string> CompressAsync(string sourcePath, string outputDirectory, CompressorMode compressorMode)
+    public async Task<string> CompressAsync(string sourcePath, string outputDirectory, string fileType, CompressorMode compressorMode)
     {
-        var outputPath = Path.Combine(outputDirectory, Path.GetFileNameWithoutExtension(sourcePath) + ".mp4");
-        if (sourcePath == outputPath)
+        var outputExtension = ".mp4";
+        var sourceExtension = Path.GetExtension(sourcePath);
+        var outputPath = Path.Combine(outputDirectory, Path.GetFileNameWithoutExtension(sourcePath) + outputExtension);
+        if (outputExtension.Equals(sourceExtension, StringComparison.OrdinalIgnoreCase))
         {
             if (compressorMode == CompressorMode.Convert)
             {
-                return outputPath; // Already converted
+                return sourcePath; // Already converted // ToDo: Needs to be logged as Skipped, currently logged as Success
             }
             else
             {
@@ -46,17 +47,17 @@ public class VideoCompressor(IFileDateResolver fileDateResolver) : IVideoCompres
                     bool isSmallEnough = videoStream.Width <= 1920 && videoStream.Height <= 1920;
                     bool isModernCodec = videoStream.CodecName == "h264" || videoStream.CodecName == "hevc";
                     double bitrateKbps = analysis.Format.BitRate / 1000.0;
-                    bool isLowBitrate = bitrateKbps <= 5000;
+                    bool isLowBitrate = bitrateKbps <= 8000;
 
                     if (isSmallEnough && isLowBitrate && isModernCodec)
                     {
-                        return outputPath; // Already compressed
+                        return sourcePath; // Already compressed
                     }
                 }
             }
         }
 
-        DateTimeOffset? setDate = fileDateResolver.ResolveBestDate(sourcePath);
+        DateTimeOffset? setDate = fileDateResolver.ResolveBestDate(fileType, sourcePath);
         string ffmpegFormattedSetDate = setDate == null ? "" : setDate.Value.UtcDateTime.ToString("yyyy-MM-ddTHH:mm:ssZ"); // ISO 8601
         outputPath = FileHelper.GetUniqueFilePath(outputPath);
         switch (compressorMode)
@@ -76,7 +77,7 @@ public class VideoCompressor(IFileDateResolver fileDateResolver) : IVideoCompres
                             .WithCustomArgument("-pix_fmt yuv420p")
                             .WithCustomArgument("-map_metadata 0")
                             .WithCustomArgument("-profile:v main")
-                            .WithCustomArgument("-movflags +faststart+use_metadata_tags");
+                            .WithCustomArgument("-movflags +faststart");
                         if (compressorMode == CompressorMode.CompressAndResize)
                         {
                             // If input width (iw) is > 1920, scale width to 1920 and height proportionally (-2).
@@ -91,9 +92,7 @@ public class VideoCompressor(IFileDateResolver fileDateResolver) : IVideoCompres
                         if (setDate.HasValue)
                         {
                             options
-                                .WithCustomArgument($"-metadata creation_time=\"{ffmpegFormattedSetDate}\"")
-                                .WithCustomArgument($"-metadata date=\"{ffmpegFormattedSetDate}\"")
-                                .WithCustomArgument($"-metadata datetime=\"{ffmpegFormattedSetDate}\"");
+                                .WithCustomArgument($"-metadata creation_time=\"{ffmpegFormattedSetDate}\"");
                         }
                     })
                     .ProcessAsynchronously();
@@ -113,14 +112,12 @@ public class VideoCompressor(IFileDateResolver fileDateResolver) : IVideoCompres
                             .WithCustomArgument("-pix_fmt yuv420p")
                             .WithCustomArgument("-map_metadata 0")
                             .WithCustomArgument("-profile:v main")
-                            .WithCustomArgument("-movflags +faststart+use_metadata_tags")
+                            .WithCustomArgument("-movflags +faststart")
                             .WithCustomArgument("-vf \"scale='trunc(iw/2)*2:trunc(ih/2)*2'\"");
                         if (setDate.HasValue)
                         {
                             options
-                                .WithCustomArgument($"-metadata creation_time=\"{ffmpegFormattedSetDate}\"")
-                                .WithCustomArgument($"-metadata date=\"{ffmpegFormattedSetDate}\"")
-                                .WithCustomArgument($"-metadata datetime=\"{ffmpegFormattedSetDate}\"");
+                                .WithCustomArgument($"-metadata creation_time=\"{ffmpegFormattedSetDate}\"");
                         }
                     })
                     .ProcessAsynchronously();

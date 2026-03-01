@@ -21,17 +21,19 @@ public class ImageCompressor(IFileDateResolver fileDateResolver) : IImageCompres
 
     public bool IsSupported(string actualType) => SupportedTypes.Contains(actualType);
 
-    public async Task<string> CompressAsync(string sourcePath, string outputDirectory, CompressorMode compressorMode)
+    public async Task<string> CompressAsync(string sourcePath, string outputDirectory, string fileType, CompressorMode compressorMode)
     {
-        var outputPath = Path.Combine(outputDirectory, Path.GetFileNameWithoutExtension(sourcePath) + ".jpg");
-        if (sourcePath == outputPath && compressorMode == CompressorMode.Convert) // source already .jpg
+        var outputExtension = ".jpg";
+        var sourceExtension = Path.GetExtension(sourcePath);
+        var outputPath = Path.Combine(outputDirectory, Path.GetFileNameWithoutExtension(sourcePath) + outputExtension);
+        if (outputExtension == sourceExtension && compressorMode == CompressorMode.Convert)
         {
-            return outputPath;
+            return sourceExtension; // source already .jpg
         }
 
         using var image = new MagickImage();
         await image.ReadAsync(sourcePath);
-        if (sourcePath == outputPath && compressorMode != CompressorMode.Convert)
+        if (outputExtension == sourceExtension && compressorMode != CompressorMode.Convert)
         {
             // CRITERIA CHECK: If already .jpg, check if it actually needs Compression
             bool isTooLarge = image.Width > 1920 || image.Height > 1920;
@@ -40,11 +42,11 @@ public class ImageCompressor(IFileDateResolver fileDateResolver) : IImageCompres
             if (!isTooLarge && !isHighQuality)
             {
                 // If it's already small and lower quality, do not compress to avoid generation loss.
-                return outputPath;
+                return sourcePath;
             }
         }
 
-        DateTimeOffset? setDate = fileDateResolver.ResolveBestDate(sourcePath);
+        DateTimeOffset? setDate = fileDateResolver.ResolveBestDate(fileType, sourcePath);
         image.AutoOrient();
         switch (compressorMode)
         {

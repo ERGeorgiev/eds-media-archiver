@@ -19,14 +19,16 @@ public class AudioCompressor(IFileDateResolver fileDateResolver) : IMediaCompres
 
     public bool IsSupported(string actualType) => SupportedTypes.Contains(actualType);
 
-    public async Task<string> CompressAsync(string sourcePath, string outputDirectory, CompressorMode compressorMode)
+    public async Task<string> CompressAsync(string sourcePath, string outputDirectory, string fileType, CompressorMode compressorMode)
     {
+        var outputExtension = ".ogg";
+        var sourceExtension = Path.GetExtension(sourcePath);
         var outputPath = Path.Combine(outputDirectory,
-            Path.GetFileNameWithoutExtension(sourcePath) + ".ogg");
-        if (sourcePath == outputPath)
-            return outputPath; // Already processed, other .ogg are likely small enough already.
+            Path.GetFileNameWithoutExtension(sourcePath) + outputExtension);
+        if (outputExtension == sourceExtension)
+            return sourcePath; // Already processed, other .ogg are likely small enough already.
 
-        DateTimeOffset? setDate = fileDateResolver.ResolveBestDate(sourcePath);
+        DateTimeOffset? setDate = fileDateResolver.ResolveBestDate(sourcePath, fileType);
         string ffmpegFormattedSetDate = setDate == null ? "" : setDate.Value.UtcDateTime.ToString("yyyy-MM-ddTHH:mm:ssZ"); // ISO 8601
         outputPath = FileHelper.GetUniqueFilePath(outputPath);
         switch (compressorMode)

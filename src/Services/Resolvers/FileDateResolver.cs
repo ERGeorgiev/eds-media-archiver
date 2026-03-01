@@ -1,3 +1,4 @@
+using EdsMediaArchiver.Definitions;
 using EdsMediaArchiver.Services.FileDateReaders;
 using MetadataExtractor;
 
@@ -7,7 +8,7 @@ namespace EdsMediaArchiver.Services.Resolvers;
 
 public interface IFileDateResolver
 {
-    DateTimeOffset? ResolveBestDate(string filePath);
+    DateTimeOffset? ResolveBestDate(string fileType, string filePath);
 }
 
 /// <summary>
@@ -20,12 +21,16 @@ public partial class FileDateResolver(
 {
     private readonly IEnumerable<IFileDateReader> _dateReaders = [originalDateReader, filenameDateReader, oldestDateReader];
 
-    public DateTimeOffset? ResolveBestDate(string filePath)
+    public DateTimeOffset? ResolveBestDate(string fileType, string filePath)
     {
-        var metadataDirectories = ImageMetadataReader.ReadMetadata(filePath);
+        IReadOnlyList<MetadataExtractor.Directory> metaDirectories = [];
+        if (MediaType.SupportedImageTypes.Contains(fileType))
+        {
+            metaDirectories = ImageMetadataReader.ReadMetadata(filePath);
+        }
         foreach (var reader in _dateReaders)
         {
-            var date = reader.Read(filePath, metadataDirectories);
+            var date = reader.Read(filePath, metaDirectories);
             if (date.HasValue)
                 return date;
         }

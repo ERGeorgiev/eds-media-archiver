@@ -19,7 +19,7 @@ public class CompressProcessor(IEnumerable<IMediaCompressor> compressors, IProce
         var compressor = compressors.FirstOrDefault(c => c.IsSupported(fileType));
         if (compressor != null)
         {
-            var outputPath = await compressor.CompressAsync(sourcePath, outputDirectory, compressorMode);
+            var outputPath = await compressor.CompressAsync(sourcePath, outputDirectory, fileType, compressorMode);
 
             // Delete the original file (compressor creates a new one)
             if (string.Equals(sourcePath, outputPath, StringComparison.OrdinalIgnoreCase))
@@ -30,7 +30,7 @@ public class CompressProcessor(IEnumerable<IMediaCompressor> compressors, IProce
                 }
                 else
                 {
-                    processLogger.Log(IProcessLogger.Operation.Compress, IProcessLogger.Result.SUCCESS, sourcePath, "");
+                    processLogger.Log(IProcessLogger.Operation.Compress, IProcessLogger.Result.SUCCESS, sourcePath, "(May have been skipped if already compressed)");
                 }
                 return outputPath;
             }

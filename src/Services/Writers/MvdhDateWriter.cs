@@ -8,6 +8,7 @@ public interface IMvdhDateWriter
     Task<DateTimeOffset?> WriteDateToFileAsync(string filePath, string fileType, DateTimeOffset date);
 }
 
+[Obsolete("Not implemented")]
 public class MvdhDateWriter(
     IMetadataWriter metadataWriter, 
     IFileTypeResolver fileTypeResolver) : IFileDateWriter

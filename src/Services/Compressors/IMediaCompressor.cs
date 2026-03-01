@@ -13,5 +13,5 @@ public interface IMediaCompressor
     /// Returns the output file path, or null if compression failed.
     /// The caller is responsible for deleting the original file.
     /// </summary>
-    Task<string> CompressAsync(string sourcePath, string outputDirectory, CompressorMode compressorMode);
+    Task<string> CompressAsync(string sourcePath, string outputDirectory, string fileType, CompressorMode compressorMode);
 }

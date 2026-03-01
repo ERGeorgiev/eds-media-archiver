@@ -15,14 +15,14 @@ public class MixedFormatCompressor(IImageCompressor imageCompressor, IVideoCompr
 
     public bool IsSupported(string actualType) => SupportedTypes.Contains(actualType);
 
-    public async Task<string> CompressAsync(string sourcePath, string outputDirectory, CompressorMode compressorMode)
+    public async Task<string> CompressAsync(string sourcePath, string outputDirectory, string fileType, CompressorMode compressorMode)
     {
         var frameCount = GetFrameCount(sourcePath);
 
         if (frameCount <= 1)
-            return await imageCompressor.CompressAsync(sourcePath, outputDirectory, compressorMode);
+            return await imageCompressor.CompressAsync(sourcePath, outputDirectory, fileType, compressorMode);
         else
-            return await videoCompressor.CompressAsync(sourcePath, outputDirectory, compressorMode);
+            return await videoCompressor.CompressAsync(sourcePath, outputDirectory, fileType, compressorMode);
     }
 
     private static int GetFrameCount(string path)
