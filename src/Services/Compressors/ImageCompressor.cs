@@ -54,8 +54,8 @@ public class ImageCompressor(IFileDateResolver fileDateResolver) : IImageCompres
             case CompressorMode.Compress:
                 image.Quality = 85;
                 image.Settings.SetDefine("jpeg:sampling-factor", "4:2:0");
-                image.Settings.Interlace = Interlace.Plane;
-                image.ColorSpace = ColorSpace.sRGB; 
+                image.Settings.Interlace = Interlace.NoInterlace;
+                image.ColorSpace = ColorSpace.sRGB;
                 if (compressorMode == CompressorMode.CompressAndResize)
                 {
                     var size = new MagickGeometry("1920x1920>");
@@ -65,7 +65,8 @@ public class ImageCompressor(IFileDateResolver fileDateResolver) : IImageCompres
             case CompressorMode.Convert:
                 image.Quality = 92;
                 image.Settings.SetDefine("jpeg:sampling-factor", "1x1,1x1,1x1");
-                // COLOR FIDELITY: Ensure the ICC profile is present. Keep image profile (like Adobe RGB). 
+                image.Settings.Interlace = Interlace.NoInterlace;
+                // COLOR FIDELITY: Ensure the ICC profile is present. Keep image profile (like Adobe RGB).
                 // If no profile, define sRGB so browsers don't guess.
                 if (image.GetColorProfile() == null)
                 {

@@ -16,10 +16,14 @@ public class MetadataWriter(IXmpWriter xmpWriter) : IMetadataWriter
         using var image = new MagickImage();
         await image.ReadAsync(filePath);
 
+        // Preserve original quality to avoid unnecessary re-encoding degradation
+        var originalQuality = image.Quality;
+
         var exifDate = date.ToString("yyyy:MM:dd HH:mm:ss");
 
         // Update EXIF
         var exif = image.GetExifProfile() ?? new ExifProfile();
+        exif.Parts = ExifParts.All; // Preserve EXIF thumbnail for Windows Explorer
         exif.SetValue(ExifTag.DateTimeOriginal, exifDate);
         exif.SetValue(ExifTag.DateTimeDigitized, exifDate);
         exif.SetValue(ExifTag.DateTime, exifDate);
@@ -28,12 +32,16 @@ public class MetadataWriter(IXmpWriter xmpWriter) : IMetadataWriter
         // Update XMP (Safe Merge)
         xmpWriter.UpdateImageXmpProfile(image, date);
 
-        if (Path.GetExtension(filePath) == ".png")
+        if (Path.GetExtension(filePath).Equals(".png", StringComparison.OrdinalIgnoreCase))
         {
             // PNG Specific Attribute
             // tIME chunk is traditionally UTC
             image.SetAttribute("png:tIME", date.UtcDateTime.ToString("yyyy-MM-ddTHH:mm:ssZ"));
         }
+
+        // Use baseline encoding (not progressive) for fast Windows thumbnail generation
+        image.Quality = originalQuality;
+        image.Settings.Interlace = Interlace.NoInterlace;
 
         await image.WriteAsync(filePath);
     }
