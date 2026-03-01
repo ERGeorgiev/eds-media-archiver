@@ -15,79 +15,74 @@ public partial class OldestDateReader(IDateValidator dateValidator) : IOldestDat
     /// Reads other trusted date tags: EXIF CreateDate/ModifyDate,
     /// QuickTime movie/track dates, and XMP dates.
     /// </summary>
-    public DateTimeOffset? Read(FileInfo fileInfo, IEnumerable<MetadataExtractor.Directory> fileDirectories)
+    public DateTimeOffset? Read(string filePath, IEnumerable<MetadataExtractor.Directory> fileDirectories)
     {
         var dates = new List<DateTimeOffset>();
-        try
-        {
-            // EXIF dates
-            foreach (var dir in fileDirectories.OfType<ExifSubIfdDirectory>())
-            {
-                var date = TryGetDate(dir, ExifDirectoryBase.TagDateTimeDigitized);
-                if (dateValidator.IsValid(date)) dates.Add(date!.Value);
-            }
-        }
-        catch { }
+        // The QuickTime "Zero" date: Jan 1, 1904
+        var quickTimeEpoch = new DateTime(1904, 1, 1, 0, 0, 0, DateTimeKind.Utc);
 
-        try
+        foreach (var dir in fileDirectories)
         {
-            foreach (var dir in fileDirectories.OfType<ExifIfd0Directory>())
+            try
             {
-                var date = TryGetDate(dir, ExifIfd0Directory.TagDateTime);
-                if (dateValidator.IsValid(date)) dates.Add(date!.Value);
-            }
-        }
-        catch { }
+                switch (dir)
+                {
+                    case ExifSubIfdDirectory subIfd:
+                        TryAdd(TryGetDate(subIfd, ExifDirectoryBase.TagDateTimeDigitized));
+                        break;
 
-        try
+                    case ExifIfd0Directory ifd0:
+                        TryAdd(TryGetDate(ifd0, ExifIfd0Directory.TagDateTime));
+                        break;
+
+                    case QuickTimeMovieHeaderDirectory movHeader:
+                        var movCreate = TryGetDate(movHeader, QuickTimeMovieHeaderDirectory.TagCreated);
+                        if (movCreate.HasValue && movCreate.Value.UtcDateTime > quickTimeEpoch)
+                            TryAdd(movCreate);
+
+                        var movMod = TryGetDate(movHeader, QuickTimeMovieHeaderDirectory.TagModified);
+                        if (movMod.HasValue && movMod.Value.UtcDateTime > quickTimeEpoch)
+                            TryAdd(movMod);
+                        break;
+
+                    case QuickTimeTrackHeaderDirectory trackHeader:
+                        var trackCreate = TryGetDate(trackHeader, QuickTimeTrackHeaderDirectory.TagCreated);
+                        if (trackCreate.HasValue && trackCreate.Value.UtcDateTime > quickTimeEpoch)
+                            TryAdd(trackCreate);
+
+                        var trackMod = TryGetDate(trackHeader, QuickTimeTrackHeaderDirectory.TagModified);
+                        if (trackMod.HasValue && trackMod.Value.UtcDateTime > quickTimeEpoch)
+                            TryAdd(trackMod);
+                        break;
+
+                    case XmpDirectory xmp:
+                        TryAdd(GetXmpDate(xmp, "http://ns.adobe.com/xap/1.0/", "CreateDate"));
+                        TryAdd(GetXmpDate(xmp, "http://ns.adobe.com/xap/1.0/", "ModifyDate"));
+                        TryAdd(GetXmpDate(xmp, "http://ns.adobe.com/exif/1.0/", "DateTimeDigitized"));
+                        break;
+                }
+            }
+            catch { /* Skip corrupted directory */ }
+        }
+
+        if (dates.Count == 0)
         {
-            // QuickTime movie header
-            foreach (var dir in fileDirectories.OfType<QuickTimeMovieHeaderDirectory>())
+            try
             {
-                var date = TryGetDate(dir, QuickTimeMovieHeaderDirectory.TagCreated);
-                if (dateValidator.IsValid(date)) dates.Add(date!.Value);
-                date = TryGetDate(dir, QuickTimeMovieHeaderDirectory.TagModified);
-                if (dateValidator.IsValid(date)) dates.Add(date!.Value);
+                var fileInfo = new FileInfo(filePath);
+                TryAdd(fileInfo.CreationTime);
+                TryAdd(fileInfo.LastWriteTime);
             }
+            catch { }
         }
-        catch { }
-
-        try
-        {
-            // QuickTime track header
-            foreach (var dir in fileDirectories.OfType<QuickTimeTrackHeaderDirectory>())
-            {
-                var date = TryGetDate(dir, QuickTimeTrackHeaderDirectory.TagCreated);
-                if (dateValidator.IsValid(date)) dates.Add(date!.Value);
-                date = TryGetDate(dir, QuickTimeTrackHeaderDirectory.TagModified);
-                if (dateValidator.IsValid(date)) dates.Add(date!.Value);
-            }
-        }
-        catch { }
-
-        try
-        {
-            // XMP dates
-            foreach (var dir in fileDirectories.OfType<XmpDirectory>())
-            {
-                var date = GetXmpDate(dir, "http://ns.adobe.com/xap/1.0/", "CreateDate");
-                if (dateValidator.IsValid(date)) dates.Add(date!.Value);
-                date = GetXmpDate(dir, "http://ns.adobe.com/xap/1.0/", "ModifyDate");
-                if (dateValidator.IsValid(date)) dates.Add(date!.Value);
-                date = GetXmpDate(dir, "http://ns.adobe.com/exif/1.0/", "DateTimeDigitized");
-                if (dateValidator.IsValid(date)) dates.Add(date!.Value);
-            }
-        }
-        catch { }
-
-        try
-        {
-            if (dateValidator.IsValid(fileInfo.CreationTime)) dates.Add(fileInfo.CreationTime);
-            if (dateValidator.IsValid(fileInfo.LastWriteTime)) dates.Add(fileInfo.LastWriteTime);
-        }
-        catch { }
 
         return dates.Count > 0 ? dates.Min() : null;
+
+        void TryAdd(DateTimeOffset? date)
+        {
+            if (date != null && dateValidator.IsValid(date))
+                dates.Add(date.Value);
+        }
     }
 
     private DateTimeOffset? TryGetDate(MetadataExtractor.Directory dir, int tag)

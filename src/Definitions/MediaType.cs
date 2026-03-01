@@ -78,6 +78,11 @@ public static class MediaType
         Jpeg, Heic, Heif, Tiff
     };
 
+    public static readonly HashSet<string> SupportedMixedTypes = new(StringComparer.OrdinalIgnoreCase)
+    {
+        Apng, Gif, Webp
+    };
+
     public static readonly HashSet<string> SupportedImageTypes = new(StringComparer.OrdinalIgnoreCase)
     {
         Jpeg, Png, Avif, Heic, Heif, Bmp, Tiff
@@ -97,6 +102,6 @@ public static class MediaType
         Aiff, Amr, Ac3, Dts, Pcm, M4b, Mp2
     };
 
-    public static readonly HashSet<string> SupportedTypes = new([.. SupportedImageTypes, .. SupportedVideoTypes, .. SupportedAudioTypes],
+    public static readonly HashSet<string> SupportedTypes = new([.. SupportedMixedTypes, .. SupportedImageTypes, .. SupportedVideoTypes, .. SupportedAudioTypes],
         StringComparer.OrdinalIgnoreCase);
 }

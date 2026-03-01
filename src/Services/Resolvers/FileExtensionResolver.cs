@@ -1,5 +1,6 @@
 using EdsMediaArchiver.Definitions;
 using EdsMediaArchiver.Helpers;
+using EdsMediaArchiver.Services.Logging;
 using TagLib;
 
 namespace EdsMediaArchiver.Services.Resolvers;
@@ -13,7 +14,7 @@ public interface IFileExtensionResolver
 /// <summary>
 /// Renames files to ensure their extension matches their actual type.
 /// </summary>
-public class FileExtensionResolver : IFileExtensionResolver
+public class FileExtensionResolver(IProcessLogger processLogger) : IFileExtensionResolver
 {
     public bool IsSupported(string actualType) => ExtensionsTypes.FileTypeToExtension.ContainsKey(actualType);
 
@@ -36,7 +37,7 @@ public class FileExtensionResolver : IFileExtensionResolver
 
         System.IO.File.Move(oldPath, newPath);
 
-        Console.WriteLine($"  [RENAME] {oldPath} -> {Path.GetFileName(newPath)} (actual type: {actualType})");
+        processLogger.Log(IProcessLogger.Operation.RestoreExtension, IProcessLogger.Result.SUCCESS, sourcePath, $"{newPath,-60}");
         return Task.FromResult(newPath);
     }
 }

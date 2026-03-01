@@ -16,14 +16,15 @@ public interface IProcessLogger
         Compress,
         Convert,
         Archive,
-        Date,
+        SetDate,
+        RestoreExtension,
     }
 
     public enum Result
     {
-        Success,
-        Error,
-        Skip
+        SUCCESS,
+        ERROR,
+        SKIPPED
     }
 }
 
@@ -42,13 +43,11 @@ public class ProcessLogger : IProcessLogger
         _logs.Add(log);
         var key = FilePathToKey(filePath);
         _logsPerFile.AddOrUpdate(key, [log], (k, v) => { v.Add(log); return v; });
-        PrintLog(log);
     }
 
     public void PrintLogs(string filePath)
     {
         var key = FilePathToKey(filePath);
-        Console.WriteLine($"File: {filePath}");
         if (_logsPerFile.TryGetValue(key, out var logs))
         {
             foreach (var log in logs)
@@ -60,13 +59,19 @@ public class ProcessLogger : IProcessLogger
 
     public static void PrintLog(ProcessLog log)
     {
-        Console.WriteLine($"  [{log.Operation}:{log.Result}] {log.Message} for '{log.FilePath,-60}'");
+        if (log.Result == Result.SUCCESS)
+        {
+            Console.WriteLine($"  [{log.Operation}] {log.Message}");
+        }
+        else
+        {
+            Console.WriteLine($"  {log.Result}:[{log.Operation}] {log.Message}");
+        }
     }
 
     private static string FilePathToKey(string filePath)
     {
-        var key = Path.Combine(Path.GetDirectoryName(filePath)!, Path.GetFileNameWithoutExtension(filePath));
-        return key;
+        return filePath;
     }
 
     public void PrintSummary()
@@ -74,8 +79,9 @@ public class ProcessLogger : IProcessLogger
         // Summary
         Console.WriteLine("────────────────────────────────────────────────");
         Console.WriteLine($"Summary");
-        var skipped = _logs.Where(r => r.Result == Result.Skip).ToList();
-        var errored = _logs.Where(r => r.Result == Result.Error).ToList();
+        var success = _logs.Where(r => r.Result == Result.SUCCESS).ToList();
+        var skipped = _logs.Where(r => r.Result == Result.SKIPPED).ToList();
+        var errored = _logs.Where(r => r.Result == Result.ERROR).ToList();
 
         if (skipped.Count > 0)
         {
@@ -95,6 +101,7 @@ public class ProcessLogger : IProcessLogger
 
         Console.WriteLine();
         Console.WriteLine("  Results:");
+        Console.WriteLine($"    Success:    {success.Count}");
         Console.WriteLine($"    Skipped:    {skipped.Count}");
         Console.WriteLine($"    Errors:     {errored.Count}");
     }

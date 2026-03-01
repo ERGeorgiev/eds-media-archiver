@@ -13,7 +13,7 @@ public interface IDateProcessor
     /// Determines the current file type from the file path (handles post-compression type changes).
     /// Skips if no valid date is available.
     /// </summary>
-    Task<DateTimeOffset?> ProcessAsync(FileInfo fileInfo, string outputDirectory, string actualType);
+    Task<DateTimeOffset?> ProcessAsync(string filePath, string outputDirectory, string actualType);
 }
 
 public class DateProcessor(
@@ -22,22 +22,22 @@ public class DateProcessor(
     IFileDateResolver fileDateResolver,
     IProcessLogger processLogger) : IDateProcessor
 {
-    public async Task<DateTimeOffset?> ProcessAsync(FileInfo fileInfo, string outputDirectory, string actualType)
+    public async Task<DateTimeOffset?> ProcessAsync(string filePath, string outputDirectory, string actualType)
     {
-        var metadataDirectories = ImageMetadataReader.ReadMetadata(fileInfo.FullName);
-        var originDate = fileDateResolver.ResolveBestDate(fileInfo, metadataDirectories);
+        var metadataDirectories = ImageMetadataReader.ReadMetadata(filePath);
+        var originDate = fileDateResolver.ResolveBestDate(filePath, metadataDirectories);
         if (originDate.HasValue == false)
         {
-            processLogger.Log(IProcessLogger.Operation.Date, IProcessLogger.Result.Skip, fileInfo.FullName, "No valid dates found.");
+            processLogger.Log(IProcessLogger.Operation.SetDate, IProcessLogger.Result.SKIPPED, filePath, "No valid dates found.");
             return null;
         }
 
-        var currentType = fileTypeResolver.GetActualFileType(fileInfo.FullName);
+        var currentType = fileTypeResolver.GetActualFileType(filePath);
 
-        await WriteDateForTypeAsync(fileInfo.FullName, currentType, originDate.Value);
-        SetFilesystemDates(fileInfo.FullName, originDate.Value);
+        await WriteDateForTypeAsync(filePath, currentType, originDate.Value);
+        SetFilesystemDates(filePath, originDate.Value);
 
-        processLogger.Log(IProcessLogger.Operation.Date, IProcessLogger.Result.Success, fileInfo.FullName, $"Date Set: {originDate:yyyy-MM-dd HH:mm:ss}");
+        processLogger.Log(IProcessLogger.Operation.SetDate, IProcessLogger.Result.SUCCESS, filePath, $"{originDate:yyyy-MM-dd HH:mm:ss}");
         return originDate;
     }
 

@@ -1,4 +1,3 @@
-using EdsMediaArchiver.Definitions;
 using EdsMediaArchiver.Helpers;
 using EdsMediaArchiver.Services;
 using EdsMediaArchiver.Services.Logging;
@@ -78,37 +77,38 @@ foreach (var inputPath in args)
         dirPath = Path.GetDirectoryName(inputPath) ?? "";
         files = [inputPath];
     }
-    var unsupportedFiles = files.Where(f => MediaType.SupportedTypes.Contains(Path.GetExtension(f)) == false).ToList(); // ToDo: Decide with actual type
-    var supportedFiles = files.Except(unsupportedFiles).ToList();
-    Console.WriteLine($"  Found {supportedFiles.Count} supported files");
+    Console.WriteLine($"  Found {files.Count} files");
     Console.WriteLine();
 
-    // Process files with limited parallelism
-    var semaphore = new SemaphoreSlim(10);
-    var tasks = supportedFiles.Select(async file =>
+    var printLock = new object();
+    var options = new ParallelOptions
     {
-        await semaphore.WaitAsync();
-        try
-        {
-            var request = fileRequestFactory.Create(dirPath, file);
-            request.Compress = prefs.Compress;
-            request.ReizeOnCompress = prefs.ResizeOnCompress;
-            request.Standardize = prefs.Standardize;
-            request.SetDates = prefs.SetDates;
+        MaxDegreeOfParallelism = 10
+    };
+    await Parallel.ForEachAsync(files, options, async (file, token) =>
+    {
+        var request = fileRequestFactory.Create(dirPath, file);
+        request.Compress = prefs.Compress;
+        request.ReizeOnCompress = prefs.ResizeOnCompress;
+        request.Standardize = prefs.Standardize;
+        request.SetDates = prefs.SetDates;
+
+        await Task.Run(async () => {
             await mediaFileProcessor.ProcessFileAsync(request);
+        }, token);
+
+        lock (printLock)
+        {
+            Console.WriteLine($"FILE: {request.OriginalPath.Absolute}");
             logs.PrintLogs(request.OriginalPath.Absolute);
             if (request.OriginalPath != request.NewPath)
             {
                 logs.PrintLogs(request.NewPath.Absolute);
             }
         }
-        finally
-        {
-            semaphore.Release();
-        }
     });
 
-    await Task.WhenAll(tasks);
+    Console.WriteLine();
     Console.WriteLine($"  Finished Processing: {inputPath}");
     logs.PrintSummary();
 }
@@ -119,6 +119,7 @@ Console.WriteLine("  All done!");
 Console.WriteLine("================================================");
 Console.WriteLine();
 Console.Write("Press any key to exit...");
+Console.In.ReadToEnd();
 Console.ReadLine();
 
 return 0;

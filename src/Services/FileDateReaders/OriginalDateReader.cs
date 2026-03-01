@@ -10,7 +10,7 @@ public interface IOriginalDateReader : IFileDateReader { }
 
 public class OriginalDateReader(IDateValidator dateValidator) : IOriginalDateReader
 {
-    public DateTimeOffset? Read(FileInfo fileInfo, IEnumerable<MetadataExtractor.Directory> fileDirectories)
+    public DateTimeOffset? Read(string filePath, IEnumerable<MetadataExtractor.Directory> fileDirectories)
     {
         try
         {

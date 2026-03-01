@@ -26,17 +26,17 @@ public class CompressProcessor(IEnumerable<IMediaCompressor> compressors, IProce
             {
                 if (compressorMode == CompressorMode.Convert)
                 {
-                    processLogger.Log(IProcessLogger.Operation.Convert, IProcessLogger.Result.Skip, sourcePath, $"Not necessary.");
+                    processLogger.Log(IProcessLogger.Operation.Convert, IProcessLogger.Result.SKIPPED, sourcePath, $"Not necessary.");
                 }
                 else
                 {
-                    processLogger.Log(IProcessLogger.Operation.Compress, IProcessLogger.Result.Success, sourcePath, "");
+                    processLogger.Log(IProcessLogger.Operation.Compress, IProcessLogger.Result.SUCCESS, sourcePath, "");
                 }
                 return outputPath;
             }
 
             File.Delete(sourcePath);
-            processLogger.Log(IProcessLogger.Operation.Compress, IProcessLogger.Result.Success, sourcePath, $"Compressed To: {outputPath}");
+            processLogger.Log(IProcessLogger.Operation.Compress, IProcessLogger.Result.SUCCESS, sourcePath, $"{outputPath,-60}");
             return outputPath;
         }
         return sourcePath;

@@ -11,12 +11,12 @@ internal static class FileHelper
         var ext = Path.GetExtension(path);
         var counter = 2;
 
-        string candidate;
-        do
+        string candidate = Path.Combine(dir, $"{baseName}_a{ext}");
+        while (File.Exists(candidate))
         {
-            candidate = Path.Combine(dir, $"{baseName}_a{counter}{ext}");
             counter++;
-        } while (File.Exists(candidate));
+            candidate = Path.Combine(dir, $"{baseName}_a{counter}{ext}");
+        }
 
         return candidate;
     }

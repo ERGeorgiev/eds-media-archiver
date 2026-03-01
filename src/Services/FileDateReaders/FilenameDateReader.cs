@@ -7,9 +7,9 @@ public interface IFilenameDateReader : IFileDateReader { }
 
 public partial class FilenameDateReader(IDateValidator dateValidator) : IFilenameDateReader
 {
-    public DateTimeOffset? Read(FileInfo fileInfo, IEnumerable<MetadataExtractor.Directory> fileDirectories)
+    public DateTimeOffset? Read(string filePath, IEnumerable<MetadataExtractor.Directory> fileDirectories)
     {
-        var filename = fileInfo.Name;
+        var filename = Path.GetFileNameWithoutExtension(filePath);
         Match? match;
         foreach (var pattern in FilenameDateTimePatterns)
         {

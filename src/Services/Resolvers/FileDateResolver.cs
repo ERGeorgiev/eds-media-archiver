@@ -6,7 +6,7 @@ namespace EdsMediaArchiver.Services.Resolvers;
 
 public interface IFileDateResolver
 {
-    DateTimeOffset? ResolveBestDate(FileInfo fileInfo, IEnumerable<MetadataExtractor.Directory> fileDirectories);
+    DateTimeOffset? ResolveBestDate(string filePath, IEnumerable<MetadataExtractor.Directory> fileDirectories);
 }
 
 /// <summary>
@@ -23,11 +23,11 @@ public partial class FileDateResolver(
 {
     private readonly IEnumerable<IFileDateReader> _dateReaders = [originalDateReader, filenameDateReader, oldestDateReader];
 
-    public DateTimeOffset? ResolveBestDate(FileInfo fileInfo, IEnumerable<MetadataExtractor.Directory> fileDirectories)
+    public DateTimeOffset? ResolveBestDate(string filePath, IEnumerable<MetadataExtractor.Directory> fileDirectories)
     {
         foreach (var reader in _dateReaders)
         {
-            var date = reader.Read(fileInfo, fileDirectories);
+            var date = reader.Read(filePath, fileDirectories);
             if (date.HasValue)
                 return date;
         }

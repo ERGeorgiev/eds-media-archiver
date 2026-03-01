@@ -27,7 +27,7 @@ public class ArchiveProcessor(
         {
             if (MediaType.SupportedTypes.Contains(request.ActualFileType) == false)
             {
-                processLogger.Log(IProcessLogger.Operation.Archive, IProcessLogger.Result.Skip, request.OriginalPath.Absolute, $"Unsupported FileType '{request.ActualFileType}'");
+                processLogger.Log(IProcessLogger.Operation.Archive, IProcessLogger.Result.SKIPPED, request.OriginalPath.Absolute, $"Unsupported FileType '{request.ActualFileType}'");
                 return;
             }
 
@@ -47,12 +47,12 @@ public class ArchiveProcessor(
 
             if (request.SetDates)
             {
-                var dateResult = await dateProcessor.ProcessAsync(request.FileInfo, request.NewPath.Directory, request.ActualFileType);
+                var dateResult = await dateProcessor.ProcessAsync(request.NewPath.Absolute, request.NewPath.Directory, request.ActualFileType);
             }
         }
         catch (Exception ex)
         {
-            processLogger.Log(IProcessLogger.Operation.Archive, IProcessLogger.Result.Error, request.OriginalPath.Absolute, ex.Message);
+            processLogger.Log(IProcessLogger.Operation.Archive, IProcessLogger.Result.ERROR, request.OriginalPath.Absolute, ex.Message);
         }
     }
 }
