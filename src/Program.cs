@@ -36,6 +36,7 @@ if (ConsoleHelper.TryGetUserPreferences(out var prefs) == false)
 
 Console.WriteLine();
 Console.Write("  Ensure you have created a backup! Proceed? (Y/n): ");
+ConsoleHelper.FlushInput();
 if (ConsoleHelper.AskYesNo() == false)
 {
     Console.WriteLine("  Cancelled.");
@@ -119,7 +120,7 @@ Console.WriteLine("  All done!");
 Console.WriteLine("================================================");
 Console.WriteLine();
 Console.Write("Press any key to exit...");
-Console.In.ReadToEnd();
+ConsoleHelper.FlushInput();
 Console.ReadLine();
 
 return 0;

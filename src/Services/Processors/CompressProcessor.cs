@@ -36,7 +36,14 @@ public class CompressProcessor(IEnumerable<IMediaCompressor> compressors, IProce
             }
 
             File.Delete(sourcePath);
-            processLogger.Log(IProcessLogger.Operation.Compress, IProcessLogger.Result.SUCCESS, sourcePath, $"{outputPath,-60}");
+            if (compressorMode == CompressorMode.Convert)
+            {
+                processLogger.Log(IProcessLogger.Operation.Convert, IProcessLogger.Result.SUCCESS, sourcePath, $"{outputPath,-60}");
+            }
+            else
+            {
+                processLogger.Log(IProcessLogger.Operation.Compress, IProcessLogger.Result.SUCCESS, sourcePath, $"{outputPath,-60}");
+            }
             return outputPath;
         }
         return sourcePath;

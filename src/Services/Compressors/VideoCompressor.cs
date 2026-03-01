@@ -72,6 +72,7 @@ public class VideoCompressor : IVideoCompressor
                             .WithSpeedPreset(Speed.Slow)
                             .WithAudioCodec("aac")
                             .WithAudioBitrate(128)
+                            .WithCustomArgument("-pix_fmt yuv420p")
                             .WithCustomArgument("-map_metadata 0")
                             .WithCustomArgument("-movflags use_metadata_tags");
                         if (compressorMode == CompressorMode.CompressAndResize)
