@@ -16,9 +16,6 @@ public class MetadataWriter(IXmpWriter xmpWriter) : IMetadataWriter
         using var image = new MagickImage();
         await image.ReadAsync(filePath);
 
-        // Preserve original quality to avoid unnecessary re-encoding degradation
-        var originalQuality = image.Quality;
-
         var exifDate = date.ToString("yyyy:MM:dd HH:mm:ss");
 
         // Update EXIF
@@ -40,7 +37,6 @@ public class MetadataWriter(IXmpWriter xmpWriter) : IMetadataWriter
         }
 
         // Use baseline encoding (not progressive) for fast Windows thumbnail generation
-        image.Quality = originalQuality;
         image.Settings.Interlace = Interlace.NoInterlace;
 
         await image.WriteAsync(filePath);
