@@ -19,7 +19,7 @@ if (Debugger.IsAttached)
 {
     var currentDirectory = new DirectoryInfo(Directory.GetCurrentDirectory());
     var solutionDir = currentDirectory.Parent!.Parent!.Parent!.FullName;
-    args = [$"{Path.Combine(solutionDir, "TestData")}", $"{Path.Combine(solutionDir, "TestData2")}"];
+    args = [$"{Path.Combine(solutionDir, "TestData")}"];
 }
 
 // Validate input paths
