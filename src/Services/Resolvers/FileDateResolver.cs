@@ -24,10 +24,11 @@ public partial class FileDateResolver(
     public DateTimeOffset? ResolveBestDate(string fileType, string filePath)
     {
         IReadOnlyList<MetadataExtractor.Directory> metaDirectories = [];
-        if (MediaType.SupportedImageTypes.Contains(fileType))
+        try
         {
             metaDirectories = ImageMetadataReader.ReadMetadata(filePath);
         }
+        catch { }
         foreach (var reader in _dateReaders)
         {
             var date = reader.Read(filePath, metaDirectories);
