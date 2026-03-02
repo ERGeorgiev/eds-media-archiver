@@ -47,7 +47,7 @@ public class VideoCompressor(IFileDateResolver fileDateResolver) : IVideoCompres
                     bool isSmallEnough = videoStream.Width <= 1920 && videoStream.Height <= 1920;
                     bool isModernCodec = videoStream.CodecName == "h264" || videoStream.CodecName == "hevc";
                     double bitrateKbps = analysis.Format.BitRate / 1000.0;
-                    bool isLowBitrate = bitrateKbps <= 8000;
+                    bool isLowBitrate = bitrateKbps <= 10000;
 
                     if (isSmallEnough && isLowBitrate && isModernCodec)
                     {
@@ -77,7 +77,8 @@ public class VideoCompressor(IFileDateResolver fileDateResolver) : IVideoCompres
                             .WithCustomArgument("-pix_fmt yuv420p")
                             .WithCustomArgument("-map_metadata 0")
                             .WithCustomArgument("-profile:v main")
-                            .WithCustomArgument("-movflags +faststart");
+                            .WithCustomArgument("-color_range 1") // Forces limited range
+                            .WithCustomArgument("-movflags +faststart"); 
                         if (compressorMode == CompressorMode.CompressAndResize)
                         {
                             // If input width (iw) is > 1920, scale width to 1920 and height proportionally (-2).
