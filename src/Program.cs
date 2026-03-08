@@ -64,9 +64,9 @@ foreach (var inputPath in args)
     Console.WriteLine($"Processing: {inputPath}");
     Console.WriteLine();
 
-    var targetInfo = new FileInfo(inputPath);
-    var exists = (int)targetInfo.Attributes != -1;
-    if (exists == false)
+    var isDir = Directory.Exists(inputPath);
+    var isFile = File.Exists(inputPath);
+    if (isDir == false && isFile == false)
     {
         Console.Error.WriteLine($"[ERROR] Target not found: {inputPath}");
         continue;
@@ -74,7 +74,7 @@ foreach (var inputPath in args)
 
     string dirPath;
     List<string> files;
-    if (targetInfo.Attributes.HasFlag(FileAttributes.Directory)) // It's a directory
+    if (isDir) // It's a directory
     {
         dirPath = inputPath;
         files = Directory.EnumerateFiles(inputPath, "*", SearchOption.AllDirectories).ToList();

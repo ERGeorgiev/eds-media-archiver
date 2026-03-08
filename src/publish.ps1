@@ -1,1 +1,2 @@
-dotnet publish -c Release
+$publishDir = $PSScriptRoot
+dotnet publish -c Release -o $publishDir

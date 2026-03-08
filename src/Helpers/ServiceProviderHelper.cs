@@ -35,7 +35,6 @@ internal static class ServiceProviderHelper
 
             // Processors
             .AddSingleton<ICompressProcessor, CompressProcessor>()
-            .AddSingleton<IFileDateWriter, FileDateWriter>()
             .AddSingleton<IArchiveProcessor, ArchiveProcessor>()
 
             // Resolvers
@@ -47,11 +46,11 @@ internal static class ServiceProviderHelper
             .AddSingleton<IDateValidator, DateValidator>()
 
             // Writers
-            .AddSingleton<IMetadataWriter, MetadataWriter>()
-            .AddSingleton<IXmpWriter, XmpWriter>()
+            .AddSingleton<IFileDateWriter, FileDateWriter>()
 
             // Other
             .AddSingleton<IArchiveRequestFactory, ArchiveRequestFactory>()
+            .AddSingleton<IExifToolService, ExifToolService>()
 
             .BuildServiceProvider();
 

@@ -52,6 +52,7 @@ public class ArchiveProcessor(
                 request.NewPath = new(request.NewPath.Root, output);
                 output = await compressProcessor.ProcessAsync(request.NewPath.Absolute, request.NewPath.Directory, request.ActualFileType, CompressorMode.Convert);
                 request.NewPath = new(request.NewPath.Root, output);
+                // ToDo: Update actual type? SetDates later relies on it!
             }
 
             if (request.SetDates)

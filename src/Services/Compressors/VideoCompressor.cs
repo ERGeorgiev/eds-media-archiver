@@ -1,6 +1,5 @@
 using EdsMediaArchiver.Definitions;
 using EdsMediaArchiver.Helpers;
-using EdsMediaArchiver.Services.Resolvers;
 using FFMpegCore;
 using FFMpegCore.Enums;
 
@@ -11,7 +10,7 @@ public interface IVideoCompressor : IMediaCompressor { }
 /// <summary>
 /// Compresses video formats to MP4 (H.264 + AAC).
 /// </summary>
-public class VideoCompressor(IFileDateResolver fileDateResolver) : IVideoCompressor
+public class VideoCompressor(IExifToolService exif) : IVideoCompressor
 {
     public static readonly HashSet<string> SupportedTypes = new(StringComparer.OrdinalIgnoreCase)
     {
@@ -39,31 +38,24 @@ public class VideoCompressor(IFileDateResolver fileDateResolver) : IVideoCompres
             }
             else
             {
-                // The code below prevents re-compressing of compressed files.
-                // It's commented out, as currently this solution relies on ffmpeg to date .mp4, so compression can be used
-                // as a way to date them, otherwise there's no way. MvdhDateWriter needs to be finished to enable
-                // writing to videos.
+                // Prevent compression of already compressed files.
+                var analysis = await FFProbe.AnalyseAsync(sourcePath);
+                var videoStream = analysis.VideoStreams.FirstOrDefault();
+                if (videoStream != null)
+                {
+                    bool isSmallEnough = videoStream.Width <= 1920 && videoStream.Height <= 1920;
+                    bool isModernCodec = videoStream.CodecName == "h264" || videoStream.CodecName == "hevc";
+                    double bitrateKbps = analysis.Format.BitRate / 1000.0;
+                    bool isLowBitrate = bitrateKbps <= 10000;
 
-                //// Prevent compression of already compressed files.
-                //var analysis = await FFProbe.AnalyseAsync(sourcePath);
-                //var videoStream = analysis.VideoStreams.FirstOrDefault();
-                //if (videoStream != null)
-                //{
-                //    bool isSmallEnough = videoStream.Width <= 1920 && videoStream.Height <= 1920;
-                //    bool isModernCodec = videoStream.CodecName == "h264" || videoStream.CodecName == "hevc";
-                //    double bitrateKbps = analysis.Format.BitRate / 1000.0;
-                //    bool isLowBitrate = bitrateKbps <= 10000;
-
-                //    if (isSmallEnough && isLowBitrate && isModernCodec)
-                //    {
-                //        return sourcePath; // Already compressed
-                //    }
-                //}
+                    if (isSmallEnough && isLowBitrate && isModernCodec)
+                    {
+                        return sourcePath; // Already compressed
+                    }
+                }
             }
         }
 
-        DateTimeOffset? setDate = fileDateResolver.ResolveBestDate(fileType, sourcePath);
-        string ffmpegFormattedSetDate = setDate == null ? "" : setDate.Value.UtcDateTime.ToString("yyyy-MM-ddTHH:mm:ssZ"); // ISO 8601
         outputPath = FileHelper.GetUniqueFilePath(outputPath);
         switch (compressorMode)
         {
@@ -86,19 +78,13 @@ public class VideoCompressor(IFileDateResolver fileDateResolver) : IVideoCompres
                             .WithCustomArgument("-movflags +faststart"); 
                         if (compressorMode == CompressorMode.CompressAndResize)
                         {
-                            // If input width (iw) is > 1920, scale width to 1920 and height proportionally (-2).
-                            // The '-2' ensures the resulting height is always an even number (required for x264).
-                            options.WithCustomArgument("-vf \"scale='trunc(min(1920,iw)/2)*2':-2\"");
+                            // If width/height is > 1920, scale width to 1920
+                            options.WithCustomArgument("-vf \"scale=1920:1920:force_original_aspect_ratio=decrease:force_divisible_by=2\"");
                         }
                         else
                         {
                             // Ensure current dimensions are even (required for yuv420p)
                             options.WithCustomArgument("-vf \"scale='trunc(iw/2)*2:trunc(ih/2)*2'\"");
-                        }
-                        if (setDate.HasValue)
-                        {
-                            options
-                                .WithCustomArgument($"-metadata creation_time=\"{ffmpegFormattedSetDate}\"");
                         }
                     })
                     .ProcessAsynchronously();
@@ -109,22 +95,10 @@ public class VideoCompressor(IFileDateResolver fileDateResolver) : IVideoCompres
                     .OutputToFile(outputPath, overwrite: false, options =>
                     {
                         options
-                            .WithVideoCodec("libx264")
-                            // CRF 17 for "Visually Lossless"
-                            .WithConstantRateFactor(17)
-                            .WithSpeedPreset(Speed.Slow)
-                            .WithAudioCodec("aac")
-                            .WithAudioBitrate(192)
-                            .WithCustomArgument("-pix_fmt yuv420p")
+                            .WithVideoCodec("copy")
+                            .WithAudioCodec("copy")
                             .WithCustomArgument("-map_metadata 0")
-                            .WithCustomArgument("-profile:v main")
-                            .WithCustomArgument("-movflags +faststart")
-                            .WithCustomArgument("-vf \"scale='trunc(iw/2)*2:trunc(ih/2)*2'\"");
-                        if (setDate.HasValue)
-                        {
-                            options
-                                .WithCustomArgument($"-metadata creation_time=\"{ffmpegFormattedSetDate}\"");
-                        }
+                            .WithCustomArgument("-movflags +faststart");
                     })
                     .ProcessAsynchronously();
                 break;
@@ -132,11 +106,7 @@ public class VideoCompressor(IFileDateResolver fileDateResolver) : IVideoCompres
                 throw new NotSupportedException($"Mode {compressorMode} not supported");
         }
 
-        if (setDate.HasValue)
-        {
-            File.SetCreationTime(outputPath, setDate.Value.LocalDateTime);
-            File.SetLastWriteTime(outputPath, setDate.Value.LocalDateTime);
-        }
+        await exif.CopyMetadata(sourcePath, outputPath);
 
         return outputPath;
     }
