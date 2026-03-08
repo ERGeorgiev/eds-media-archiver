@@ -24,7 +24,7 @@ if (Debugger.IsAttached)
 if (args.Length == 0)
 {
     Console.Error.WriteLine("[ERROR] No folders provided. Pass folder paths as arguments.");
-    Console.Error.WriteLine("To use, just drop files or folders to be processed (recursively) on top of this .exe file.");
+    Console.WriteLine("To use, just drop files or folders to be processed (recursively) on top of this .exe file.");
     Console.Write("Press any key to exit...");
     Console.ReadLine();
     return 1;
