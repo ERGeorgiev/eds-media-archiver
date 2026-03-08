@@ -18,6 +18,9 @@ public class AudioCompressor : IMediaCompressor
 
     public bool IsSupported(string actualType) => SupportedTypes.Contains(actualType);
 
+    public bool OutputMp4InsteadOfOgg { get; set; } = false;
+    public bool ConvertOnly { get; set; } = false;
+
     public async Task<string> CompressAsync(string sourcePath, string outputDirectory, string fileType, CompressorMode compressorMode)
     {
         var outputExtension = ".ogg";

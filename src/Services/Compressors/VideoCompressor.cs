@@ -34,7 +34,7 @@ public class VideoCompressor(IExifToolService exif) : IVideoCompressor
         {
             if (compressorMode == CompressorMode.Convert)
             {
-                return sourcePath; // Already converted // ToDo: Needs to be logged as Skipped, currently logged as Success
+                return sourcePath;
             }
             else
             {
