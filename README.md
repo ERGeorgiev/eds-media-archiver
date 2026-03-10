@@ -8,13 +8,13 @@ A collection of Windows drag-and-drop utilities for managing media files. Each t
 
 Prepares media files for long-term storage through compression, format standardization, date fixing, and extension correction. Supports 70+ media formats across images, video, and audio.
 
-### [Ed's Media Tagger](eds-media-tagger/)
-
-AI-powered tagging tool that uses a local LLM (via [Ollama](https://ollama.com/)) to analyze images and videos, then writes descriptive tags directly into file metadata. Fully offline, no cloud APIs.
-
 ### [Ed's Media Date Restorer](eds-media-date-restorer/)
 
 Restores original creation dates on media files by extracting dates from EXIF, XMP, filenames, and filesystem metadata, then writing them back consistently across all metadata standards.
+
+### [Ed's Media Tagger](eds-media-tagger/)
+
+AI-powered tagging tool that uses a local LLM (via [Ollama](https://ollama.com/)) to analyze images and videos, then writes descriptive tags directly into file metadata. Fully offline, no cloud APIs.
 
 ## Prerequisites
 
