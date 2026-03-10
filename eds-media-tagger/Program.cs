@@ -7,7 +7,7 @@ using System.Reflection;
 Console.WriteLine();
 Console.WriteLine("================================================");
 Console.WriteLine($"  Ed's Media Tagger v{Assembly.GetEntryAssembly()?.GetName().Version?.ToString(2)}");
-Console.WriteLine("  Drop file/folder on the .exe to process.");
+Console.WriteLine("  Tag your media files for easier search in galliers.");
 Console.WriteLine("================================================");
 Console.WriteLine();
 

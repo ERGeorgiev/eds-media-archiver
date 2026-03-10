@@ -1,7 +1,5 @@
-using EdsMediaArchiver.Definitions;
 using EdsMediaArchiver.Helpers;
 using EdsMediaArchiver.Services;
-using EdsMediaArchiver.Services.Compressors;
 using EdsMediaArchiver.Services.Processors;
 using EdsMediaArchiver.Services.Resolvers;
 using Microsoft.Extensions.DependencyInjection;
